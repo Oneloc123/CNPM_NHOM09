@@ -77,11 +77,11 @@ public class BoardView extends JFrame {
         int[][] winLine = boardModel.getWinLine(row, col);
         if (winLine != null) {
             SwingUtilities.invokeLater(() -> highlightWinningCells(winLine, true));
-            endGame("🎉 X thắng!");
+            endGame("X thắng!");
             return;
         }
         if (boardModel.isBoardFull()) {
-            endGame("🤝 Hòa!");
+            endGame("Hòa!");
             return;
         }
 
@@ -91,6 +91,26 @@ public class BoardView extends JFrame {
         new Thread(this::aiThinking).start();
     }
 
+    private void aiThinking() {
+        int[] aiMove = aiModel.getNextMove(boardModel);
+        boardModel.makeMove(aiMove[0], aiMove[1]);
+
+        SwingUtilities.invokeLater(() -> {
+            updateBoardUI();
+            setButtonsEnabled(true);
+
+            int[][] winLine = boardModel.getWinLine(aiMove[0], aiMove[1]);
+            if (winLine != null) {
+                highlightWinningCells(winLine, false);
+                endGame("Máy (O) thắng!");
+                return;
+            }
+            if (boardModel.isBoardFull()) {
+                endGame("Hòa!");
+            }
+        });
+    }
+    
     private void setButtonsEnabled(boolean enabled) {
         for (JButton[] row : buttons) {
             for (JButton btn : row) {
