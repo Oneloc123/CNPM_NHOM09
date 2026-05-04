@@ -6,80 +6,171 @@ import aiService.AIService;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class BoardView extends JFrame {
-    private Board boardModel;
-    private AIService aiModel;
+    private final Board boardModel;
+    private final AIService aiModel;
     private JButton[][] buttons;
-    private JLabel lblStatus;
-   
+    private final JLabel lblStatus;
+    private boolean gameOver = false;
 
-    public BoardView(int size, String difficulty) {
-        // Khởi tạo bàn cờ
-        this.boardModel = new Board(size);
-        // Khởi tạo AI
+    public BoardView(String difficulty) {
+        this.boardModel = new Board();
         this.aiModel = new AIService(difficulty);
 
-        setTitle("Cờ Caro | Độ khó: " + difficulty);
-        setSize(700, 700);
+        setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
+        setSize(480, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        lblStatus = new JLabel("Lượt của: X", SwingConstants.CENTER);
-        lblStatus.setFont(new Font("Arial", Font.BOLD, 18));
+        lblStatus = createStatusLabel();
         add(lblStatus, BorderLayout.NORTH);
 
-        JPanel boardPanel = new JPanel(new GridLayout(size, size));
-        buttons = new JButton[size][size];
-        // Vẽ bàn cờ
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                JButton btn = new JButton("");
-                btn.setFont(new Font("Arial", Font.BOLD, 20));
-                final int row = i;
-                final int col = j;
-                btn.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        handlePlayerMove(row, col);
-                    }
-                });
-                buttons[i][j] = btn;
-                boardPanel.add(btn);
-            }
-        }
+        JPanel boardPanel = createBoardPanel();
         add(boardPanel, BorderLayout.CENTER);
     }
 
-    // Hàm xử lý khi người chơi bấm vào 1 ô
-    private void handlePlayerMove(int row, int col) {
-        // 1. Cập nhật dữ liệu vào Model
-        boolean isValidMove = boardModel.makeMove(row, col);
-        if (isValidMove) {
-            // 2. Cập nhật Giao diện (View)
-            updateBoardUI();
-            // 3. chơi với máy và tới lượt máy (O)    
-                int[] aiMove = aiModel.getNextMove(boardModel);
-                boardModel.makeMove(aiMove[0], aiMove[1]);
-                updateBoardUI();    
+    private JLabel createStatusLabel() {
+        JLabel label = new JLabel("Lượt của: X", SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 18));
+        label.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
+        return label;
+    }
+
+    private JPanel createBoardPanel() {
+        JPanel panel = new JPanel(new GridLayout(Board.SIZE, Board.SIZE, 6, 6));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        panel.setBackground(new Color(45, 45, 45));
+
+        buttons = new JButton[Board.SIZE][Board.SIZE];
+
+        for (int i = 0; i < Board.SIZE; i++) {
+            for (int j = 0; j < Board.SIZE; j++) {
+                JButton btn = createGameButton();
+                final int row = i, col = j;
+                btn.addActionListener(e -> handlePlayerMove(row, col));
+
+                buttons[i][j] = btn;
+                panel.add(btn);
+            }
         }
+        return panel;
+    }
+
+    private JButton createGameButton() {
+        JButton btn = new JButton("");
+        btn.setFont(new Font("Arial", Font.BOLD, 52));
+        btn.setBackground(new Color(245, 245, 245));
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorder(BorderFactory.createRaisedBevelBorder());
+        return btn;
+    }
+
+    private void handlePlayerMove(int row, int col) {
+        if (gameOver || !boardModel.makeMove(row, col))
+            return;
+
+        updateBoardUI();
+
+        int[][] winLine = boardModel.getWinLine(row, col);
+        if (winLine != null) {
+            SwingUtilities.invokeLater(() -> highlightWinningCells(winLine, true));
+            endGame("X thắng!");
+            return;
+        }
+        if (boardModel.isBoardFull()) {
+            endGame("Hòa!");
+            return;
+        }
+
+        setButtonsEnabled(false);
+        lblStatus.setText("Máy đang suy nghĩ...");
+
+        new Thread(this::aiThinking).start();
+    }
+
+    private void aiThinking() {
+        int[] aiMove = aiModel.getNextMove(boardModel);
+        boardModel.makeMove(aiMove[0], aiMove[1]);
+
+        SwingUtilities.invokeLater(() -> {
+            updateBoardUI();
+            setButtonsEnabled(true);
+
+            int[][] winLine = boardModel.getWinLine(aiMove[0], aiMove[1]);
+            if (winLine != null) {
+                highlightWinningCells(winLine, false);
+                endGame("Máy (O) thắng!");
+                return;
+            }
+            if (boardModel.isBoardFull()) {
+                endGame("Hòa!");
+            }
+        });
     }
     
+    private void setButtonsEnabled(boolean enabled) {
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(enabled);
+                }
+            }
+        }
+    }
+    private void highlightWinningCells(int[][] winLine, boolean isPlayerWin) {
+        if (winLine == null) return;
 
-    // Hàm để đồng bộ Giao diện theo dữ liệu của Model
+        Color bgColor = isPlayerWin ? new Color(220, 70, 70) : new Color(60, 130, 190);
+
+        for (int[] pos : winLine) {
+            JButton btn = buttons[pos[0]][pos[1]];
+            btn.setBackground(bgColor);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
+        }
+    }
+    private void endGame(String message) {
+        gameOver = true;
+        lblStatus.setText(message);
+
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(false);
+                }
+            }
+        }
+
+        int choice = JOptionPane.showConfirmDialog(this,
+                message + "\nBạn có muốn chơi lại không?",
+                "Kết thúc ván đấu",
+                JOptionPane.YES_NO_OPTION);
+
+        if (choice == JOptionPane.YES_OPTION) {
+            dispose();
+            new BoardView(aiModel.getDifficulty()).setVisible(true);
+        } else {
+            dispose();
+            new controller.GameController();
+        }
+    }
+
     private void updateBoardUI() {
-        int size = boardModel.getSize();
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                int cellValue = boardModel.getCell(i, j);
-                if (cellValue == 1) {
-                    buttons[i][j].setText("X");
-                    buttons[i][j].setForeground(Color.RED);
-                } else if (cellValue == 2) {
-                    buttons[i][j].setText("O");
-                    buttons[i][j].setForeground(Color.BLUE);
+        for (int i = 0; i < Board.SIZE; i++) {
+            for (int j = 0; j < Board.SIZE; j++) {
+                int cell = boardModel.getCell(i, j);
+                JButton btn = buttons[i][j];
+
+                if (cell == 1) {
+                    btn.setText("X");
+                    btn.setForeground(new Color(220, 50, 50));
+                } else if (cell == 2) {
+                    btn.setText("O");
+                    btn.setForeground(new Color(30, 100, 200));
                 }
             }
         }
