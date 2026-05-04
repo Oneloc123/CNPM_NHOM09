@@ -120,6 +120,44 @@ public class BoardView extends JFrame {
             }
         }
     }
+    private void highlightWinningCells(int[][] winLine, boolean isPlayerWin) {
+        if (winLine == null) return;
+
+        Color bgColor = isPlayerWin ? new Color(220, 70, 70) : new Color(60, 130, 190);
+
+        for (int[] pos : winLine) {
+            JButton btn = buttons[pos[0]][pos[1]];
+            btn.setBackground(bgColor);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
+        }
+    }
+    private void endGame(String message) {
+        gameOver = true;
+        lblStatus.setText(message);
+
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(false);
+                }
+            }
+        }
+
+        int choice = JOptionPane.showConfirmDialog(this,
+                message + "\nBạn có muốn chơi lại không?",
+                "Kết thúc ván đấu",
+                JOptionPane.YES_NO_OPTION);
+
+        if (choice == JOptionPane.YES_OPTION) {
+            dispose();
+            new BoardView(aiModel.getDifficulty()).setVisible(true);
+        } else {
+            dispose();
+            new controller.GameController();
+        }
+    }
 
     private void updateBoardUI() {
         for (int i = 0; i < Board.SIZE; i++) {
