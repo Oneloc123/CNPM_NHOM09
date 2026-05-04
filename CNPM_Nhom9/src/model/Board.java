@@ -21,6 +21,24 @@ public class Board {
 		return true;
 	}
 
+	public boolean checkWin(int row, int col) {
+		int player = isXTurn ? 2 : 1;
+		return getWinLine(row, col, player) != null;
+	}
+	
+	public boolean isBoardFull() {
+		for (int i = 0; i < SIZE; i++)
+			for (int j = 0; j < SIZE; j++)
+				if (matrix[i][j] == 0)
+					return false;
+		return true;
+	}
+	
+	public void undoMove(int row, int col) {
+		matrix[row][col] = 0;
+		isXTurn = !isXTurn;
+	}
+	
 	public int getCell(int row, int col) {
 		return matrix[row][col];
 	}

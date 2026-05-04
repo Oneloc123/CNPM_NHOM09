@@ -10,43 +10,24 @@ import view.BoardView;
 import view.GameView;
 
 public class GameController {
-	GameView gameView;
-	BoardView boardView;
 	public GameController() {
-		gameView = new GameView();
+		GameView gameView = new G	ameView();
+
 		gameView.getBtnCreate().addActionListener(new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int sizeIndex = gameView.getCbxBoardSize().getSelectedIndex();
-				String sizeString = gameView.getCbxBoardSize().getSelectedItem().toString();
-				String difficulty = gameView.getCbxdifficulty().getSelectedItem().toString();
-		
+				String difficulty = gameView.getCbxDifficulty().getSelectedItem().toString();
 				gameView.dispose();
-				
-				int size = 1;
-				switch (sizeIndex) {
-				case 0: {
-					size = 10;
-				}
-				case 1: {
-					size = 15;
-				}
-				case 2: {
-					size = 20;
-				}
-				case 3: {
-					size = 25;
-				}
-				default:
-					size = 10;
-				}
-				
-				boardView = new BoardView(size, difficulty);
-				boardView.setVisible(true);
+				new BoardView(difficulty).setVisible(true);
 			}
 		});
-		
+
+		gameView.getBtnCancel().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
 		
 		try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
