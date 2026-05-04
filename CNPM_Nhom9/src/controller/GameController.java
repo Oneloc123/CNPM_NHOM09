@@ -11,7 +11,7 @@ import view.GameView;
 
 public class GameController {
 	public GameController() {
-		GameView gameView = new G	ameView();
+		GameView gameView = new GameView();
 
 		gameView.getBtnCreate().addActionListener(new ActionListener() {
 			@Override
