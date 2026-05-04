@@ -133,31 +133,31 @@ public class BoardView extends JFrame {
             btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
         }
     }
+
     private void endGame(String message) {
-        gameOver = true;
-        lblStatus.setText(message);
+		gameOver = true;
+		lblStatus.setText(message);
 
-        for (JButton[] row : buttons) {
-            for (JButton btn : row) {
-                if (btn.getText().isEmpty()) {
-                    btn.setEnabled(false);
-                }
-            }
-        }
+		for (JButton[] row : buttons) {
+			for (JButton btn : row) {
+				if (btn.getText().isEmpty()) {
+					btn.setEnabled(false);
+				}
+			}
+		}
 
-        int choice = JOptionPane.showConfirmDialog(this,
-                message + "\nBạn có muốn chơi lại không?",
-                "Kết thúc ván đấu",
-                JOptionPane.YES_NO_OPTION);
+		Object[] options = { "Chơi lại", "Trang chủ" };
+		int choice = JOptionPane.showOptionDialog(this, message + "\nBạn muốn làm gì tiếp theo?", "Kết thúc ván đấu",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
-        if (choice == JOptionPane.YES_OPTION) {
-            dispose();
-            new BoardView(aiModel.getDifficulty()).setVisible(true);
-        } else {
-            dispose();
-            new controller.GameController();
-        }
-    }
+		if (choice == 0) {
+			dispose();
+			new BoardView(aiModel.getDifficulty()).setVisible(true);
+		} else {
+			dispose();
+			new controller.GameController();
+		}
+	}
 
     private void updateBoardUI() {
         for (int i = 0; i < Board.SIZE; i++) {
