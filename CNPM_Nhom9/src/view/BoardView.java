@@ -102,4 +102,45 @@ public class BoardView extends JFrame {
             }
         }
     }
+
+    public void highlightWin(int[][] winLine, boolean isPlayer) {
+        if (winLine == null) return;
+
+        Color bgColor = isPlayer
+                ? new Color(220, 70, 70)
+                : new Color(60, 130, 190);
+
+        for (int[] pos : winLine) {
+            JButton btn = buttons[pos[0]][pos[1]];
+            btn.setBackground(bgColor);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
+        }
+    }
+
+    public void showEndGame(String message) {
+        gameOver = true;
+        lblStatus.setText(message);
+
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(false);
+                }
+            }
+        }
+
+        Object[] options = {"Chơi lại", "Trang chủ"};
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                message + "\nBạn muốn làm gì tiếp theo?",
+                "Kết thúc ván đấu",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+        
 }
