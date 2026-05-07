@@ -142,5 +142,12 @@ public class BoardView extends JFrame {
                 options,
                 options[0]
         );
+
+        if (choice == 0) {
+            controller.handleRestart();
+        } else {
+            controller.handleGoHome();
+        }
+    }
         
 }
