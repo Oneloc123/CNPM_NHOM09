@@ -77,11 +77,11 @@ public class BoardView extends JFrame {
         int[][] winLine = boardModel.getWinLine(row, col);
         if (winLine != null) {
             SwingUtilities.invokeLater(() -> highlightWinningCells(winLine, true));
-            endGame("🎉 X thắng!");
+            endGame("X thắng!");
             return;
         }
         if (boardModel.isBoardFull()) {
-            endGame("🤝 Hòa!");
+            endGame("Hòa!");
             return;
         }
 
@@ -91,6 +91,26 @@ public class BoardView extends JFrame {
         new Thread(this::aiThinking).start();
     }
 
+    private void aiThinking() {
+        int[] aiMove = aiModel.getNextMove(boardModel);
+        boardModel.makeMove(aiMove[0], aiMove[1]);
+
+        SwingUtilities.invokeLater(() -> {
+            updateBoardUI();
+            setButtonsEnabled(true);
+
+            int[][] winLine = boardModel.getWinLine(aiMove[0], aiMove[1]);
+            if (winLine != null) {
+                highlightWinningCells(winLine, false);
+                endGame("Máy (O) thắng!");
+                return;
+            }
+            if (boardModel.isBoardFull()) {
+                endGame("Hòa!");
+            }
+        });
+    }
+    
     private void setButtonsEnabled(boolean enabled) {
         for (JButton[] row : buttons) {
             for (JButton btn : row) {
@@ -100,6 +120,44 @@ public class BoardView extends JFrame {
             }
         }
     }
+    private void highlightWinningCells(int[][] winLine, boolean isPlayerWin) {
+        if (winLine == null) return;
+
+        Color bgColor = isPlayerWin ? new Color(220, 70, 70) : new Color(60, 130, 190);
+
+        for (int[] pos : winLine) {
+            JButton btn = buttons[pos[0]][pos[1]];
+            btn.setBackground(bgColor);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
+        }
+    }
+
+    private void endGame(String message) {
+		gameOver = true;
+		lblStatus.setText(message);
+
+		for (JButton[] row : buttons) {
+			for (JButton btn : row) {
+				if (btn.getText().isEmpty()) {
+					btn.setEnabled(false);
+				}
+			}
+		}
+
+		Object[] options = { "Chơi lại", "Trang chủ" };
+		int choice = JOptionPane.showOptionDialog(this, message + "\nBạn muốn làm gì tiếp theo?", "Kết thúc ván đấu",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+		if (choice == 0) {
+			dispose();
+			new BoardView(aiModel.getDifficulty()).setVisible(true);
+		} else {
+			dispose();
+			new controller.GameController();
+		}
+	}
 
     private void updateBoardUI() {
         for (int i = 0; i < Board.SIZE; i++) {
