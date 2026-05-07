@@ -10,15 +10,22 @@ import view.BoardView;
 import view.GameView;
 
 public class GameController {
+
 	public GameController() {
-		GameView gameView = new G	ameView();
+		GameView gameView = new GameView();
 
 		gameView.getBtnCreate().addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String difficulty = gameView.getCbxDifficulty().getSelectedItem().toString();
 				gameView.dispose();
-				new BoardView(difficulty).setVisible(true);
+
+				BoardView boardView = new BoardView(difficulty);
+				BoardController boardCtrl = new BoardController(difficulty);
+				boardCtrl.setView(boardView);
+				boardView.setController(boardCtrl);
+
+				boardView.setVisible(true);
 			}
 		});
 
@@ -28,18 +35,18 @@ public class GameController {
 				System.exit(0);
 			}
 		});
-		
+
 		try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                gameView.setVisible(true);
-            }
-        });
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				gameView.setVisible(true);
+			}
+		});
 	}
-	
 }

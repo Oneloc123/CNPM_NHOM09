@@ -8,16 +8,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 public class BoardView extends JFrame {
-    private final Board boardModel;
-    private final AIService aiModel;
+    private BoardController controller;
     private JButton[][] buttons;
-    private final JLabel lblStatus;
+    private JLabel lblStatus;
     private boolean gameOver = false;
 
     public BoardView(String difficulty) {
-        this.boardModel = new Board();
-        this.aiModel = new AIService(difficulty);
-
         setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
         setSize(480, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -49,7 +45,8 @@ public class BoardView extends JFrame {
             for (int j = 0; j < Board.SIZE; j++) {
                 JButton btn = createGameButton();
                 final int row = i, col = j;
-                btn.addActionListener(e -> handlePlayerMove(row, col));
+
+                btn.addActionListener(e -> onCellClicked(row, col));
 
                 buttons[i][j] = btn;
                 panel.add(btn);
@@ -68,63 +65,16 @@ public class BoardView extends JFrame {
         return btn;
     }
 
-    private void handlePlayerMove(int row, int col) {
-        if (gameOver || !boardModel.makeMove(row, col))
+    private void onCellClicked(int row, int col) {
+        if (gameOver)
             return;
-
-        updateBoardUI();
-
-        int[][] winLine = boardModel.getWinLine(row, col);
-        if (winLine != null) {
-            SwingUtilities.invokeLater(() -> highlightWinningCells(winLine, true));
-            endGame("X thắng!");
-            return;
-        }
-        if (boardModel.isBoardFull()) {
-            endGame("Hòa!");
-            return;
-        }
-
-        setButtonsEnabled(false);
-        lblStatus.setText("Máy đang suy nghĩ...");
-
-        new Thread(this::aiThinking).start();
+        controller.handlePlayerMove(row, col);
     }
 
-    private void aiThinking() {
-        int[] aiMove = aiModel.getNextMove(boardModel);
-        boardModel.makeMove(aiMove[0], aiMove[1]);
-
-        SwingUtilities.invokeLater(() -> {
-            updateBoardUI();
-            setButtonsEnabled(true);
-
-            int[][] winLine = boardModel.getWinLine(aiMove[0], aiMove[1]);
-            if (winLine != null) {
-                highlightWinningCells(winLine, false);
-                endGame("Máy (O) thắng!");
-                return;
-            }
-            if (boardModel.isBoardFull()) {
-                endGame("Hòa!");
-            }
-        });
-    }
-    
-    private void setButtonsEnabled(boolean enabled) {
-        for (JButton[] row : buttons) {
-            for (JButton btn : row) {
-                if (btn.getText().isEmpty()) {
-                    btn.setEnabled(enabled);
-                }
-            }
-        }
-    }
-
-    private void updateBoardUI() {
+    public void updateBoard(Board board) {
         for (int i = 0; i < Board.SIZE; i++) {
             for (int j = 0; j < Board.SIZE; j++) {
-                int cell = boardModel.getCell(i, j);
+                int cell = board.getCell(i, j);
                 JButton btn = buttons[i][j];
 
                 if (cell == 1) {
@@ -136,6 +86,20 @@ public class BoardView extends JFrame {
                 }
             }
         }
-        lblStatus.setText("Lượt của: " + (boardModel.isXTurn() ? "X" : "O"));
+        lblStatus.setText("Lượt của: " + (board.isXTurn() ? "X" : "O"));
+    }
+
+    public void setStatus(String text) {
+        lblStatus.setText(text);
+    }
+
+    public void setInputEnabled(boolean enabled) {
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(enabled);
+                }
+            }
+        }
     }
 }
