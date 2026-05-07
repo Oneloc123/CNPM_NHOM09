@@ -10,41 +10,43 @@ import view.BoardView;
 import view.GameView;
 
 public class GameController {
-	private final Board board;
-    private final AIService ai;
-    private BoardView view;
 
-    public BoardController(String difficulty) {
-        this.board = new Board();
-    }
+	public GameController() {
+		GameView gameView = new GameView();
 
-    public void setView(BoardView view) {
-        this.view = view;
-    }
+		gameView.getBtnCreate().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String difficulty = gameView.getCbxDifficulty().getSelectedItem().toString();
+				gameView.dispose();
 
-    public void handlePlayerMove(int row, int col) {
-        int player = board.makeMove(row, col);
-        if (player == 0)
-            return;
+				BoardView boardView = new BoardView(difficulty);
+				BoardController boardCtrl = new BoardController(difficulty);
+				boardCtrl.setView(boardView);
+				boardView.setController(boardCtrl);
 
-        view.updateBoard(board);
+				boardView.setVisible(true);
+			}
+		});
 
-        int[][] winLine = board.getWinLine(row, col, player);
-        if (winLine != null) {
-            view.highlightWin(winLine, true);
-            SwingUtilities.invokeLater(() -> view.showEndGame("X thắng!"));
-            return;
-        }
+		gameView.getBtnCancel().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
 
-        if (board.isBoardFull()) {
-            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
-            return;
-        }
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        view.setInputEnabled(false);
-        view.setStatus("Máy đang suy nghĩ...");
-        triggerAIMove();
-    }
-
-	
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				gameView.setVisible(true);
+			}
+		});
+	}
 }
