@@ -10,36 +10,41 @@ import view.BoardView;
 import view.GameView;
 
 public class GameController {
-	public GameController() {
-		GameView gameView = new G	ameView();
+	private final Board board;
+    private final AIService ai;
+    private BoardView view;
 
-		gameView.getBtnCreate().addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				String difficulty = gameView.getCbxDifficulty().getSelectedItem().toString();
-				gameView.dispose();
-				new BoardView(difficulty).setVisible(true);
-			}
-		});
+    public BoardController(String difficulty) {
+        this.board = new Board();
+    }
 
-		gameView.getBtnCancel().addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
-			}
-		});
-		
-		try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void setView(BoardView view) {
+        this.view = view;
+    }
+
+    public void handlePlayerMove(int row, int col) {
+        int player = board.makeMove(row, col);
+        if (player == 0)
+            return;
+
+        view.updateBoard(board);
+
+        int[][] winLine = board.getWinLine(row, col, player);
+        if (winLine != null) {
+            view.highlightWin(winLine, true);
+            SwingUtilities.invokeLater(() -> view.showEndGame("X thắng!"));
+            return;
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                gameView.setVisible(true);
-            }
-        });
-	}
+
+        if (board.isBoardFull()) {
+            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+            return;
+        }
+
+        view.setInputEnabled(false);
+        view.setStatus("Máy đang suy nghĩ...");
+        triggerAIMove();
+    }
+
 	
 }
