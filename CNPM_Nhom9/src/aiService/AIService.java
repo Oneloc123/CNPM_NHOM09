@@ -5,16 +5,14 @@ import model.Board;
 
 public class AIService {
 	private String difficulty;
-	private static final int WIN_SCORE = 1000;
-	private static final int LOSE_SCORE = -1000;
+	
+    private static final int WIN_SCORE =  1000;
+    private static final int LOSE_SCORE = -1000;
+    private static final int MAX_DEPTH = 9;
 
-	public AIService(String difficulty) {
-		this.difficulty = difficulty;
-	}
-
-	public String getDifficulty() {
-		return difficulty;
-	}
+    public AIService(String difficulty) {
+        this.difficulty = difficulty;
+    }
 
 	public int[] getNextMove(Board board) {
 		if (difficulty.equals("Dễ")) {
@@ -25,6 +23,9 @@ public class AIService {
 	}
 
 	private int[] getRandomMove(Board board) {
+		if (board.isBoardFull())
+			return null;
+
 		Random rand = new Random();
 		int r, c;
 		do {
@@ -35,14 +36,17 @@ public class AIService {
 	}
 
 	private int[] getBestMove(Board board) {
+		if (board.isBoardFull())
+			return null;
+
 		int bestScore = Integer.MIN_VALUE;
 		int[] bestMove = null;
 
 		for (int i = 0; i < Board.SIZE; i++) {
 			for (int j = 0; j < Board.SIZE; j++) {
 				if (board.getCell(i, j) == 0) {
-					board.makeMove(i, j);
-					int score = minimax(board, false, i, j, 2);
+					int player = board.makeMove(i, j);
+					int score = minimax(board, false, i, j, player, MAX_DEPTH - 1);
 					board.undoMove(i, j);
 
 					if (score > bestScore) {
@@ -52,17 +56,20 @@ public class AIService {
 				}
 			}
 		}
-
-		return bestMove != null ? bestMove : getRandomMove(board);
+		return bestMove;
 	}
 
-	private int minimax(Board board, boolean isMaximizing, int lastRow, int lastCol, int lastPlayer) {
+	private int minimax(Board board, boolean isMaximizing, int lastRow, int lastCol, int lastPlayer, int depth) {
 
-		if (board.checkWin(lastRow, lastCol, lastPlayer)) {
-			return lastPlayer == 2 ? WIN_SCORE : LOSE_SCORE;
+		if (board.getWinLine(lastRow, lastCol, lastPlayer) != null) {
+			return lastPlayer == 2 ? WIN_SCORE + depth : LOSE_SCORE - depth;
 		}
 
 		if (board.isBoardFull()) {
+			return 0;
+		}
+
+		if (depth == 0) {
 			return 0;
 		}
 
@@ -71,8 +78,8 @@ public class AIService {
 			for (int i = 0; i < Board.SIZE; i++) {
 				for (int j = 0; j < Board.SIZE; j++) {
 					if (board.getCell(i, j) == 0) {
-						board.makeMove(i, j);
-						int score = minimax(board, false, i, j, 2);
+						int player = board.makeMove(i, j);
+						int score = minimax(board, false, i, j, player, depth - 1);
 						board.undoMove(i, j);
 						best = Math.max(best, score);
 					}
@@ -84,8 +91,8 @@ public class AIService {
 			for (int i = 0; i < Board.SIZE; i++) {
 				for (int j = 0; j < Board.SIZE; j++) {
 					if (board.getCell(i, j) == 0) {
-						board.makeMove(i, j);
-						int score = minimax(board, true, i, j, 1);
+						int player = board.makeMove(i, j);
+						int score = minimax(board, true, i, j, player, depth - 1);
 						board.undoMove(i, j);
 						best = Math.min(best, score);
 					}

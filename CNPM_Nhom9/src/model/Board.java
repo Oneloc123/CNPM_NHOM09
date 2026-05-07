@@ -22,6 +22,11 @@ public class Board {
 		return player;
 	}
 
+	public synchronized void undoMove(int row, int col) {
+		matrix[row][col] = 0;
+		isXTurn = !isXTurn;
+	}
+
 	public synchronized int getCell(int row, int col) {
 		return matrix[row][col];
 	}
