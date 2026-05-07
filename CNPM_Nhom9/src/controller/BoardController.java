@@ -17,6 +17,10 @@ public class BoardController {
         this.ai = new AIService(difficulty);
     }
 
+    public void setView(BoardView view) {
+        this.view = view;
+    }
+
     public void handlePlayerMove(int row, int col) {
         int player = board.makeMove(row, col);
         if (player == 0)
@@ -79,5 +83,21 @@ public class BoardController {
                 }
             }
         }.execute();
+    }
+
+    public void handleRestart() {
+        String difficulty = ai.getDifficulty();
+        view.dispose();
+
+        BoardView       newView = new BoardView(difficulty);
+        BoardController newCtrl = new BoardController(difficulty);
+        newCtrl.setView(newView);
+        newView.setController(newCtrl);
+        newView.setVisible(true);
+    }
+
+    public void handleGoHome() {
+        view.dispose();
+        new GameController();
     }
 }

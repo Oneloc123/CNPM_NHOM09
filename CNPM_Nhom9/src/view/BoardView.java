@@ -27,6 +27,10 @@ public class BoardView extends JFrame {
         add(boardPanel, BorderLayout.CENTER);
     }
 
+    public void setController(BoardController controller) {
+        this.controller = controller;
+    }
+
     private JLabel createStatusLabel() {
         JLabel label = new JLabel("Lượt của: X", SwingConstants.CENTER);
         label.setFont(new Font("Arial", Font.BOLD, 18));
@@ -142,5 +146,12 @@ public class BoardView extends JFrame {
                 options,
                 options[0]
         );
+
+        if (choice == 0) {
+            controller.handleRestart();
+        } else {
+            controller.handleGoHome();
+        }
+    }
         
 }
