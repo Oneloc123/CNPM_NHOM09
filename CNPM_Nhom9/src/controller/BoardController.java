@@ -17,6 +17,10 @@ public class BoardController {
         this.ai = new AIService(difficulty);
     }
 
+    public void setView(BoardView view) {
+        this.view = view;
+    }
+
     public void handlePlayerMove(int row, int col) {
         int player = board.makeMove(row, col);
         if (player == 0)
