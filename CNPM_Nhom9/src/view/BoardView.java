@@ -8,9 +8,62 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 public class BoardView extends JFrame {
-    
+    private BoardController controller;
     private JButton[][] buttons;
     private JLabel lblStatus;
+    private boolean gameOver = false;
+
+    public BoardView(String difficulty) {
+        setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
+        setSize(480, 550);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        lblStatus = createStatusLabel();
+        add(lblStatus, BorderLayout.NORTH);
+
+        JPanel boardPanel = createBoardPanel();
+        add(boardPanel, BorderLayout.CENTER);
+    }
+
+    private JLabel createStatusLabel() {
+        JLabel label = new JLabel("Lượt của: X", SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 18));
+        label.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
+        return label;
+    }
+
+    private JPanel createBoardPanel() {
+        JPanel panel = new JPanel(new GridLayout(Board.SIZE, Board.SIZE, 6, 6));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        panel.setBackground(new Color(45, 45, 45));
+
+        buttons = new JButton[Board.SIZE][Board.SIZE];
+
+        for (int i = 0; i < Board.SIZE; i++) {
+            for (int j = 0; j < Board.SIZE; j++) {
+                JButton btn = createGameButton();
+                final int row = i, col = j;
+
+                btn.addActionListener(e -> onCellClicked(row, col));
+
+                buttons[i][j] = btn;
+                panel.add(btn);
+            }
+        }
+        return panel;
+    }
+
+    private JButton createGameButton() {
+        JButton btn = new JButton("");
+        btn.setFont(new Font("Arial", Font.BOLD, 52));
+        btn.setBackground(new Color(245, 245, 245));
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorder(BorderFactory.createRaisedBevelBorder());
+        return btn;
+    }
 
     private void onCellClicked(int row, int col) {
         if (gameOver)
@@ -34,6 +87,10 @@ public class BoardView extends JFrame {
             }
         }
         lblStatus.setText("Lượt của: " + (board.isXTurn() ? "X" : "O"));
+    }
+
+    public void setStatus(String text) {
+        lblStatus.setText(text);
     }
 
     public void setInputEnabled(boolean enabled) {
