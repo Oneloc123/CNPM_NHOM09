@@ -14,6 +14,10 @@ public class AIService {
         this.difficulty = difficulty;
     }
 
+	public String getDifficulty() {
+        return difficulty;
+    }
+
 	public int[] getNextMove(Board board) {
 		if (difficulty.equals("Dễ")) {
 			return getRandomMove(board);
