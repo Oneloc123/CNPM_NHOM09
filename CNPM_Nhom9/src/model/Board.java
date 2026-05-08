@@ -1,5 +1,9 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Board {
 	public static final int SIZE = 3;
 	public static final int WIN_CONDITION = 3;

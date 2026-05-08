@@ -2,6 +2,7 @@ package view;
 
 import model.Board;
 import aiService.AIService;
+import controller.BoardController;
 
 import javax.swing.*;
 import java.awt.*;
