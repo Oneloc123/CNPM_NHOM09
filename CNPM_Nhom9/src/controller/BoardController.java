@@ -17,6 +17,34 @@ public class BoardController {
         this.ai = new AIService(difficulty);
     }
 
+    public void setView(BoardView view) {
+        this.view = view;
+    }
+
+    public void handlePlayerMove(int row, int col) {
+        int player = board.makeMove(row, col);
+        if (player == 0)
+            return;
+
+        view.updateBoard(board);
+
+        int[][] winLine = board.getWinLine(row, col, player);
+        if (winLine != null) {
+            view.highlightWin(winLine, true);
+            SwingUtilities.invokeLater(() -> view.showEndGame("X thắng!"));
+            return;
+        }
+
+        if (board.isBoardFull()) {
+            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+            return;
+        }
+
+        view.setInputEnabled(false);
+        view.setStatus("Máy đang suy nghĩ...");
+        triggerAIMove();
+    }
+
     private void triggerAIMove() {
         new SwingWorker<int[], Void>() {
 
@@ -55,5 +83,21 @@ public class BoardController {
                 }
             }
         }.execute();
+    }
+
+    public void handleRestart() {
+        String difficulty = ai.getDifficulty();
+        view.dispose();
+
+        BoardView       newView = new BoardView(difficulty);
+        BoardController newCtrl = new BoardController(difficulty);
+        newCtrl.setView(newView);
+        newView.setController(newCtrl);
+        newView.setVisible(true);
+    }
+
+    public void handleGoHome() {
+        view.dispose();
+        new GameController();
     }
 }
