@@ -1,84 +1,142 @@
 package view;
 
+import controller.GameController;
+
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class GameView extends JFrame {
 	private JComboBox<String> cbxDifficulty;
 	private JButton btnCreate;
 	private JButton btnCancel;
+	private GameController gameController;
 
-	public GameView() {
-		setTitle("Cờ Caro - Tạo Ván Đấu");
-		setSize(380, 220);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	public GameView(GameController gameController) {
+		this.gameController = gameController;
+		initUI();
+		setListener();
+	}
+
+	private void initUI() {
+		setTitle("CỜ CARO AI");
+		setSize(500, 320);
 		setLocationRelativeTo(null);
-		setLayout(new BorderLayout(10, 10));
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setResizable(false);
 
-		// Tiêu đề
-		JLabel lblTitle = new JLabel("CÀI ĐẶT VÁN ĐẤU", SwingConstants.CENTER);
-		lblTitle.setFont(new Font("Arial", Font.BOLD, 20));
-		lblTitle.setForeground(new Color(0, 102, 204));
-		lblTitle.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
-		add(lblTitle, BorderLayout.NORTH);
+		// Main panel
+		JPanel mainPanel = new JPanel();
+		mainPanel.setLayout(new BorderLayout());
+		mainPanel.setBackground(new Color(20, 24, 28));
+		mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-		// Form chọn độ khó
-		JPanel formPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-		formPanel.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
+		// HEADER
+		JPanel headerPanel = new JPanel();
+		headerPanel.setOpaque(false);
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
 
-		formPanel.add(new JLabel("Độ khó:"));
-		cbxDifficulty = new JComboBox<>(new String[] { "Dễ", "Khó" });
-		cbxDifficulty.setSelectedIndex(0);
-		formPanel.add(cbxDifficulty);
+		JLabel lblTitle = new JLabel("CỜ CARO");
+		lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 34));
+		lblTitle.setForeground(new Color(0, 200, 255));
 
-		add(formPanel, BorderLayout.CENTER);
+		JLabel lblSub = new JLabel("Thi đấu với AI thông minh");
+		lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+		lblSub.setForeground(new Color(180, 180, 180));
 
-		// Nút bấm
-		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+		headerPanel.add(lblTitle);
+		headerPanel.add(Box.createVerticalStrut(10));
+		headerPanel.add(lblSub);
 
-		btnCreate = new JButton("Bắt Đầu");
-		btnCreate.setBackground(new Color(40, 167, 69));
-		btnCreate.setForeground(Color.WHITE);
-		btnCreate.setFocusPainted(false);
-		btnCreate.setOpaque(true);
-		btnCreate.setBorderPainted(false);
+		//  CENTER
+		JPanel centerPanel = new JPanel();
+		centerPanel.setOpaque(false);
+		centerPanel.setBorder(new EmptyBorder(35, 40, 35, 40));
+		centerPanel.setLayout(new GridBagLayout());
 
-		btnCancel = new JButton("Hủy");
-		btnCancel.setBackground(new Color(220, 53, 69));
-		btnCancel.setForeground(Color.WHITE);
-		btnCancel.setFocusPainted(false);
-		btnCancel.setOpaque(true);
-		btnCancel.setBorderPainted(false);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(10, 10, 10, 10);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		btnPanel.add(btnCreate);
-		btnPanel.add(btnCancel);
-		add(btnPanel, BorderLayout.SOUTH);
+		JLabel lblDifficulty = new JLabel("Độ khó:");
+		lblDifficulty.setForeground(Color.WHITE);
+		lblDifficulty.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+		cbxDifficulty = new JComboBox<>(new String[]{"Dễ", "Khó"});
+		cbxDifficulty.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+		cbxDifficulty.setBackground(new Color(45, 45, 45));
+		cbxDifficulty.setForeground(Color.WHITE);
+		cbxDifficulty.setFocusable(false);
+		cbxDifficulty.setPreferredSize(new Dimension(180, 40));
+
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		centerPanel.add(lblDifficulty, gbc);
+
+		gbc.gridx = 1;
+		centerPanel.add(cbxDifficulty, gbc);
+
+		//  FOOTER
+		JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+		footerPanel.setOpaque(false);
+
+		btnCreate = createButton("Bắt Đầu", new Color(0, 170, 90));
+		btnCancel = createButton("Thoát", new Color(220, 53, 69));
+
+		footerPanel.add(btnCreate);
+		footerPanel.add(btnCancel);
+
+		mainPanel.add(headerPanel, BorderLayout.NORTH);
+		mainPanel.add(centerPanel, BorderLayout.CENTER);
+		mainPanel.add(footerPanel, BorderLayout.SOUTH);
+
+		setContentPane(mainPanel);
+	}
+
+	private JButton createButton(String text, Color color) {
+		JButton button = new JButton(text);
+		button.setFont(new Font("Segoe UI", Font.BOLD, 16));
+		button.setForeground(Color.WHITE);
+		button.setBackground(color);
+		button.setFocusPainted(false);
+		button.setBorderPainted(false);
+		button.setOpaque(true);
+		button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		button.setPreferredSize(new Dimension(140, 45));
+		return button;
 	}
 
 	public JComboBox<String> getCbxDifficulty() {
 		return cbxDifficulty;
 	}
 
-	public void setCbxDifficulty(JComboBox<String> cbxDifficulty) {
-		this.cbxDifficulty = cbxDifficulty;
-	}
-
 	public JButton getBtnCreate() {
 		return btnCreate;
-	}
-
-	public void setBtnCreate(JButton btnCreate) {
-		this.btnCreate = btnCreate;
 	}
 
 	public JButton getBtnCancel() {
 		return btnCancel;
 	}
 
-	public void setBtnCancel(JButton btnCancel) {
-		this.btnCancel = btnCancel;
-	}
+	public void setListener() {
 
-	
-	
+		btnCreate.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				gameController.createBoardGame(GameView.this);
+			}
+		});
+
+		btnCancel.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				gameController.cancelGame(GameView.this);
+			}
+		});
+	}
 }
+
