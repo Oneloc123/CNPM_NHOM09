@@ -1,5 +1,6 @@
 package view;
 
+import controller.BoardController;
 import model.Board;
 import aiService.AIService;
 import controller.BoardController;
