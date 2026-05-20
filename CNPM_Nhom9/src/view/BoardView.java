@@ -14,7 +14,9 @@ public class BoardView extends JFrame {
     private JButton[][] buttons;
     private JLabel lblStatus;
     private boolean gameOver = false;
-
+    /*
+    UC1.1.10: Hệ thống khởi tạo giao diện bàn cờ
+     */
     public BoardView(String difficulty) {
         setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
         setSize(480, 550);
@@ -28,7 +30,9 @@ public class BoardView extends JFrame {
         JPanel boardPanel = createBoardPanel();
         add(boardPanel, BorderLayout.CENTER);
     }
-
+    /*
+    UC1.1.15: Hệ thống thiết lập Controller cho viewBoard
+     */
     public void setController(BoardController controller) {
         this.controller = controller;
     }

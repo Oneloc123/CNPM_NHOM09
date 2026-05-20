@@ -14,12 +14,23 @@ public class GameView extends JFrame {
 	private JButton btnCancel;
 	private GameController gameController;
 
+	/*
+	UC1.1.2: Hệ thống khởi tạo khung chứa giao diện
+	 */
 	public GameView(GameController gameController) {
-		this.gameController = gameController;
+		setGameController(gameController);
 		initUI();
 		setListener();
 	}
-
+	/*
+	UC1.1.3: Hệ thống thiết lập gameController cho giao diện
+	 */
+	public void setGameController(GameController gameController) {
+		this.gameController = gameController;
+	}
+	/*
+	UC1.1.4: Hệ thống khởi tạo giao diện
+	 */
 	private void initUI() {
 		setTitle("CỜ CARO AI");
 		setSize(500, 320);
@@ -122,19 +133,23 @@ public class GameView extends JFrame {
 		return btnCancel;
 	}
 
+
+	/*
+	UC1.1.5: Hệ thống thiết lập sự kiện nút ấn
+	 */
 	public void setListener() {
 
 		btnCreate.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				gameController.createBoardGame(GameView.this);
+				gameController.createBoardGame();
 			}
 		});
 
 		btnCancel.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				gameController.cancelGame(GameView.this);
+				gameController.cancelGame();
 			}
 		});
 	}

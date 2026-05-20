@@ -12,11 +12,16 @@ public class BoardController {
     private final AIService ai;
     private BoardView view;
 
+    /*
+    UC1.1.11: Hệ thống Khởi tạo Controller cho bàn cờ
+     */
     public BoardController(String difficulty) {
         this.board = new Board();
         this.ai = new AIService(difficulty);
     }
-
+    /*
+    UC1.1.14: Hệ thống Thiết lập ViewBoard cho BoardControlle
+     */
     public void setView(BoardView view) {
         this.view = view;
     }
@@ -25,9 +30,7 @@ public class BoardController {
         int player = board.makeMove(row, col);
         if (player == 0)
             return;
-
         view.updateBoard(board);
-
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
             view.highlightWin(winLine, true);

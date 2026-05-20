@@ -1,12 +1,12 @@
 package test;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
 import controller.GameController;
-import view.GameView;
 
 public class Test {
+    /*
+    UC1.1.1: Người chơi ấn vào file exe
+     */
 	public static void main(String[] args) {
         new GameController();
     }

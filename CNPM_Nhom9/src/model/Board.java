@@ -11,6 +11,9 @@ public class Board {
 	private final int[][] matrix;
 	private boolean isXTurn;
 
+	/*
+	UC1.1.12: Hệ thống Khởi tạo lớp Board cho bàn cờ
+	 */
 	public Board() {
 		this.matrix = new int[SIZE][SIZE];
 		this.isXTurn = true;
