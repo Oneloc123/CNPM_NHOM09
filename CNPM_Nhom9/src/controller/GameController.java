@@ -65,7 +65,7 @@ public class GameController {
 			e.printStackTrace();
 		}
 
-		// Hiển thị giao diện trên luồng Swing
+		// Hiển thị giao diện trên luồng Swin
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override
