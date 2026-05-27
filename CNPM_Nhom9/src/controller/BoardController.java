@@ -13,18 +13,25 @@ public class BoardController {
     private BoardView view;
 
     /*
-    UC1.1.11: Hệ thống Khởi tạo Controller cho bàn cờ
+    UC1.1.6.3: Hệ thống khởi tạo Controller cho bàn cờ
      */
     public BoardController(String difficulty) {
+
+        // Khởi tạo dữ liệu bàn cờ
         this.board = new Board();
+
+        // Khởi tạo AI với độ khó đã chọn
         this.ai = new AIService(difficulty);
     }
     /*
-    UC1.1.14: Hệ thống Thiết lập ViewBoard cho BoardControlle
+    UC1.1.6.6: Hệ thống thiết lập ViewBoard cho BoardController
      */
     public void setView(BoardView view) {
+
+        // Gán giao diện bàn cờ cho controller
         this.view = view;
     }
+
 
     public void handlePlayerMove(int row, int col) {
         int player = board.makeMove(row, col);

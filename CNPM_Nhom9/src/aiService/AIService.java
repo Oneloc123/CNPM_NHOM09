@@ -11,11 +11,14 @@ public class AIService {
     private static final int MAX_DEPTH = 9;
 
 	/*
-	UC1.1.13: Hệ thống Khởi tạo AIservice cho bàn cờ
+	UC1.1.6.5: Hệ thống khởi tạo AIService cho bàn cờ
 	 */
-    public AIService(String difficulty) {
-        this.difficulty = difficulty;
-    }
+	public AIService(String difficulty) {
+
+		// Lưu độ khó AI được chọn
+		this.difficulty = difficulty;
+	}
+
 
 	public String getDifficulty() {
         return difficulty;
