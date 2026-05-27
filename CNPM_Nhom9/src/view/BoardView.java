@@ -14,24 +14,48 @@ public class BoardView extends JFrame {
     private JButton[][] buttons;
     private JLabel lblStatus;
     private boolean gameOver = false;
-
+    /*
+    UC1.1.6.2: Hệ thống khởi tạo giao diện bàn cờ
+     */
     public BoardView(String difficulty) {
+
+        // Thiết lập tiêu đề cửa sổ theo độ khó
         setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
+
+        // Thiết lập kích thước cửa sổ
         setSize(480, 550);
+
+        // Đóng hoàn toàn chương trình khi tắt cửa sổ
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Hiển thị cửa sổ ở giữa màn hình
         setLocationRelativeTo(null);
+
+        // Thiết lập layout cho cửa sổ
         setLayout(new BorderLayout());
 
+        // Khởi tạo label hiển thị trạng thái game
         lblStatus = createStatusLabel();
+
+        // Thêm label trạng thái vào phía trên
         add(lblStatus, BorderLayout.NORTH);
 
+        // Khởi tạo panel bàn cờ
         JPanel boardPanel = createBoardPanel();
+
+        // Thêm bàn cờ vào trung tâm giao diện
         add(boardPanel, BorderLayout.CENTER);
     }
 
+    /*
+    UC1.1.6.7: Hệ thống thiết lập Controller cho ViewBoard
+     */
     public void setController(BoardController controller) {
+
+        // Gán controller để ViewBoard xử lý sự kiện game
         this.controller = controller;
     }
+
 
     private JLabel createStatusLabel() {
         JLabel label = new JLabel("Lượt của: X", SwingConstants.CENTER);

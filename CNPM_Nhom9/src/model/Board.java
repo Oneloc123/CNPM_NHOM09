@@ -11,10 +11,18 @@ public class Board {
 	private final int[][] matrix;
 	private boolean isXTurn;
 
+	/*
+	UC1.1.6.4: Hệ thống khởi tạo lớp Board cho bàn cờ
+	 */
 	public Board() {
+
+		// Khởi tạo ma trận bàn cờ
 		this.matrix = new int[SIZE][SIZE];
+
+		// Thiết lập lượt đi đầu tiên là X
 		this.isXTurn = true;
 	}
+
 
 	public synchronized int makeMove(int row, int col) {
 		if (row < 0 || row >= SIZE || col < 0 || col >= SIZE || matrix[row][col] != 0) {
