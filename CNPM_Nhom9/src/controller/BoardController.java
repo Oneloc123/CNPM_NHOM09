@@ -12,18 +12,33 @@ public class BoardController {
     private final AIService ai;
     private BoardView view;
 
+    /*
+    UC1.1.6.3: Hệ thống khởi tạo Controller cho bàn cờ
+     */
     public BoardController(String difficulty) {
+
+        // Khởi tạo dữ liệu bàn cờ
         this.board = new Board();
+
+        // Khởi tạo AI với độ khó đã chọn
         this.ai = new AIService(difficulty);
+    }
+    /*
+    UC1.1.6.6: Hệ thống thiết lập ViewBoard cho BoardController
+     */
+    public void setView(BoardView view) {
+
+        // Gán giao diện bàn cờ cho controller
+        this.view = view;
     }
 
     public void handlePlayerMove(int row, int col) {
         int player = board.makeMove(row, col);
-        if (player == 0)
+        if (player == 0) {
+            SwingUtilities.invokeLater(() -> view.showError("Nước đi không hợp lệ, vui lòng chọn nước đi khác"));
             return;
-
+        }
         view.updateBoard(board);
-
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
             view.highlightWin(winLine, true);
@@ -79,5 +94,21 @@ public class BoardController {
                 }
             }
         }.execute();
+    }
+
+    public void handleRestart() {
+        String difficulty = ai.getDifficulty();
+        view.dispose();
+
+        BoardView       newView = new BoardView(difficulty);
+        BoardController newCtrl = new BoardController(difficulty);
+        newCtrl.setView(newView);
+        newView.setController(newCtrl);
+        newView.setVisible(true);
+    }
+
+    public void handleGoHome() {
+        view.dispose();
+        new GameController();
     }
 }
