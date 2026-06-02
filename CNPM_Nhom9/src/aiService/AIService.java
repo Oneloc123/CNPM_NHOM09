@@ -10,9 +10,15 @@ public class AIService {
     private static final int LOSE_SCORE = -1000;
     private static final int MAX_DEPTH = 9;
 
-    public AIService(String difficulty) {
-        this.difficulty = difficulty;
-    }
+	/*
+	UC1.1.6.5: Hệ thống khởi tạo AIService cho bàn cờ
+	 */
+	public AIService(String difficulty) {
+
+		// Lưu độ khó AI được chọn
+		this.difficulty = difficulty;
+	}
+
 
 	public String getDifficulty() {
         return difficulty;
