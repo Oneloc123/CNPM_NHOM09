@@ -9,6 +9,7 @@ public class Board {
 	private final int winCondition;
 	private final int[][] matrix;
 	private boolean isXTurn;
+	private int moveCount;
 
 	// Khởi tạo bàn cờ với kích thước động
 	public Board(int size) {
@@ -17,10 +18,15 @@ public class Board {
 		this.winCondition = (size == 5) ? 4 : 3; 
 		this.matrix = new int[size][size];
 		this.isXTurn = true;
+		this.moveCount = 0;
 	}
 
 	public int getSize() {
 		return size;
+	}
+
+	public int getMoveCount() {
+		return this.moveCount;
 	}
 
 	public synchronized int makeMove(int row, int col) {
@@ -30,12 +36,14 @@ public class Board {
 		int player = isXTurn ? 1 : 2;
 		matrix[row][col] = player;
 		isXTurn = !isXTurn;
+		this.moveCount++;
 		return player;
 	}
 
 	public synchronized void undoMove(int row, int col) {
 		matrix[row][col] = 0;
 		isXTurn = !isXTurn;
+		this.moveCount--;
 	}
 
 	public int[][] getWinLine(int row, int col, int player) {
