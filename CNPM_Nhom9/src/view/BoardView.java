@@ -179,5 +179,8 @@ public class BoardView extends JFrame {
             controller.handleGoHome();
         }
     }
-        
+
+    public void showError(String s) {
+        JOptionPane.showMessageDialog(this,s);
+    }
 }

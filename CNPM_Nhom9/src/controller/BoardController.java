@@ -32,11 +32,12 @@ public class BoardController {
         this.view = view;
     }
 
-
     public void handlePlayerMove(int row, int col) {
         int player = board.makeMove(row, col);
-        if (player == 0)
+        if (player == 0) {
+            SwingUtilities.invokeLater(() -> view.showError("Nước đi không hợp lệ, vui lòng chọn nước đi khác"));
             return;
+        }
         view.updateBoard(board);
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
