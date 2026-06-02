@@ -5,27 +5,26 @@ import java.util.Collections;
 import java.util.List;
 
 public class Board {
-	public static final int SIZE = 3;
-	public static final int WIN_CONDITION = 3;
-
+	private final int size;
+	private final int winCondition;
 	private final int[][] matrix;
 	private boolean isXTurn;
 
-	/*
-	UC1.1.6.4: Hệ thống khởi tạo lớp Board cho bàn cờ
-	 */
-	public Board() {
-
-		// Khởi tạo ma trận bàn cờ
-		this.matrix = new int[SIZE][SIZE];
-
-		// Thiết lập lượt đi đầu tiên là X
+	// Khởi tạo bàn cờ với kích thước động
+	public Board(int size) {
+		this.size = size;
+		// Nếu bàn 5x5 thì cần 4 hoặc 5 quân để thắng (ở đây ví dụ là 4, bạn có thể sửa thành 5)
+		this.winCondition = (size == 5) ? 4 : 3; 
+		this.matrix = new int[size][size];
 		this.isXTurn = true;
 	}
 
+	public int getSize() {
+		return size;
+	}
 
 	public synchronized int makeMove(int row, int col) {
-		if (row < 0 || row >= SIZE || col < 0 || col >= SIZE || matrix[row][col] != 0) {
+		if (row < 0 || row >= size || col < 0 || col >= size || matrix[row][col] != 0) {
 			return 0;
 		}
 		int player = isXTurn ? 1 : 2;
@@ -46,7 +45,7 @@ public class Board {
 			List<int[]> forward = collectDirection(row, col, dir[0], dir[1], player);
 			List<int[]> backward = collectDirection(row, col, -dir[0], -dir[1], player);
 
-			if (forward.size() + backward.size() + 1 >= WIN_CONDITION) {
+			if (forward.size() + backward.size() + 1 >= winCondition) {
 				List<int[]> line = new ArrayList<>(backward);
 				Collections.reverse(line);
 				line.add(new int[] { row, col });
@@ -61,7 +60,7 @@ public class Board {
 		List<int[]> cells = new ArrayList<>();
 		int r = row + dr;
 		int c = col + dc;
-		while (r >= 0 && r < SIZE && c >= 0 && c < SIZE && matrix[r][c] == player) {
+		while (r >= 0 && r < size && c >= 0 && c < size && matrix[r][c] == player) {
 			cells.add(new int[] { r, c });
 			r += dr;
 			c += dc;
@@ -70,8 +69,8 @@ public class Board {
 	}
 
 	public boolean isBoardFull() {
-		for (int i = 0; i < SIZE; i++)
-			for (int j = 0; j < SIZE; j++)
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < size; j++)
 				if (matrix[i][j] == 0)
 					return false;
 		return true;
