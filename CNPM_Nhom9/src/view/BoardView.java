@@ -2,77 +2,75 @@ package view;
 
 import controller.BoardController;
 import model.Board;
-import aiService.AIService;
-import controller.BoardController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 
 public class BoardView extends JFrame {
     private BoardController controller;
     private JButton[][] buttons;
     private JLabel lblStatus;
     private boolean gameOver = false;
+    
+    private String playerName;
+    private boolean isPlayerFirst;
+    private String xPlayerName;
+    private String oPlayerName;
+    private int size; // Lưu kích thước hiển thị bàn cờ
+
     /*
-    UC1.1.6.2: Hệ thống khởi tạo giao diện bàn cờ
+    UC1.1.6.2: Hệ thống khởi tạo giao diện bàn cờ tự động co giãn lưới ô
      */
-    public BoardView(String difficulty) {
+    public BoardView(String difficulty, String playerName, boolean isPlayerFirst, int size) {
+        this.playerName = playerName;
+        this.isPlayerFirst = isPlayerFirst;
+        this.size = size;
+        
+        this.xPlayerName = isPlayerFirst ? playerName : "Máy";
+        this.oPlayerName = isPlayerFirst ? "Máy" : playerName;
 
-        // Thiết lập tiêu đề cửa sổ theo độ khó
-        setTitle("Cờ Caro 3x3 | Độ khó: " + difficulty);
+        // Cập nhật tiêu đề cửa sổ chứa kích cỡ bàn cờ thực tế
+        setTitle("Cờ Caro " + size + "x" + size + " | Người chơi: " + playerName + " | Độ khó: " + difficulty);
 
-        // Thiết lập kích thước cửa sổ
-        setSize(480, 550);
+        // Thay đổi size cửa sổ Windows cho tương thích diện tích lưới nút bấm
+        if (size == 3) {
+            setSize(480, 550);
+        } else {
+            setSize(620, 700); 
+        }
 
-        // Đóng hoàn toàn chương trình khi tắt cửa sổ
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Hiển thị cửa sổ ở giữa màn hình
         setLocationRelativeTo(null);
-
-        // Thiết lập layout cho cửa sổ
         setLayout(new BorderLayout());
 
-        // Khởi tạo label hiển thị trạng thái game
         lblStatus = createStatusLabel();
-
-        // Thêm label trạng thái vào phía trên
         add(lblStatus, BorderLayout.NORTH);
 
-        // Khởi tạo panel bàn cờ
         JPanel boardPanel = createBoardPanel();
-
-        // Thêm bàn cờ vào trung tâm giao diện
         add(boardPanel, BorderLayout.CENTER);
     }
 
-    /*
-    UC1.1.6.7: Hệ thống thiết lập Controller cho ViewBoard
-     */
     public void setController(BoardController controller) {
-
-        // Gán controller để ViewBoard xử lý sự kiện game
         this.controller = controller;
     }
 
-
     private JLabel createStatusLabel() {
-        JLabel label = new JLabel("Lượt của: X", SwingConstants.CENTER);
+        JLabel label = new JLabel("Lượt của: " + xPlayerName, SwingConstants.CENTER);
         label.setFont(new Font("Arial", Font.BOLD, 18));
         label.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
         return label;
     }
 
     private JPanel createBoardPanel() {
-        JPanel panel = new JPanel(new GridLayout(Board.SIZE, Board.SIZE, 6, 6));
+        // Sinh lưới Layout tùy biến theo size (3x3 hoặc 5x5)
+        JPanel panel = new JPanel(new GridLayout(size, size, 6, 6));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
         panel.setBackground(new Color(45, 45, 45));
 
-        buttons = new JButton[Board.SIZE][Board.SIZE];
+        buttons = new JButton[size][size];
 
-        for (int i = 0; i < Board.SIZE; i++) {
-            for (int j = 0; j < Board.SIZE; j++) {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 JButton btn = createGameButton();
                 final int row = i, col = j;
 
@@ -87,7 +85,7 @@ public class BoardView extends JFrame {
 
     private JButton createGameButton() {
         JButton btn = new JButton("");
-        btn.setFont(new Font("Arial", Font.BOLD, 52));
+        btn.setFont(new Font("Arial", Font.BOLD, size == 3 ? 52 : 36));
         btn.setBackground(new Color(245, 245, 245));
         btn.setFocusPainted(false);
         btn.setOpaque(true);
@@ -102,21 +100,24 @@ public class BoardView extends JFrame {
     }
 
     public void updateBoard(Board board) {
-        for (int i = 0; i < Board.SIZE; i++) {
-            for (int j = 0; j < Board.SIZE; j++) {
-                int cell = board.getCell(i, j);
+        // ĐÃ SỬA: Bỏ maxLogicSize cũ, chạy hết kích thước thực tế của bàn cờ
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 JButton btn = buttons[i][j];
-
+                
+                int cell = board.getCell(i, j);
                 if (cell == 1) {
                     btn.setText("X");
                     btn.setForeground(new Color(220, 50, 50));
                 } else if (cell == 2) {
                     btn.setText("O");
                     btn.setForeground(new Color(30, 100, 200));
+                } else {
+                    btn.setText(""); // Đảm bảo ô trống khi restart
                 }
             }
         }
-        lblStatus.setText("Lượt của: " + (board.isXTurn() ? "X" : "O"));
+        lblStatus.setText("Lượt của: " + (board.isXTurn() ? xPlayerName : oPlayerName));
     }
 
     public void setStatus(String text) {
@@ -178,9 +179,5 @@ public class BoardView extends JFrame {
         } else {
             controller.handleGoHome();
         }
-    }
-
-    public void showError(String s) {
-        JOptionPane.showMessageDialog(this,s);
     }
 }
