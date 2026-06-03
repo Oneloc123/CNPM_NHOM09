@@ -93,10 +93,13 @@ public class BoardView extends JFrame {
         return btn;
     }
 
+    // UC 2.1.2 : HỆ thống nhận sự kiện nút ấn từ người chơi
+    // gọi phương thức void onCellClicked(int row, int col) để xử lý sự kiện nút ấn
+
     private void onCellClicked(int row, int col) {
-        if (gameOver)
+        if (gameOver)      // kiểm tra ván đã kết thúc chưa
             return;
-        controller.handlePlayerMove(row, col);
+        controller.handlePlayerMove(row, col);  // UC 2.1.3 Hệ thống gọi controller để xử lý nươc đi
     }
 
     public void updateBoard(Board board) {
@@ -179,5 +182,10 @@ public class BoardView extends JFrame {
         } else {
             controller.handleGoHome();
         }
+    }
+    // UC 2.2.2 Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
+    // khởi tạo giao diện bằng phương thức showMessageDialog của lớp JOptionPane
+    public void showError(String s) {
+        JOptionPane.showMessageDialog(this,s);
     }
 }

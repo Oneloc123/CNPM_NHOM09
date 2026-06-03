@@ -57,10 +57,27 @@ public class BoardController {
         }
     }
 
+    // UC 2.1.3 Hệ thống gọi controller để xử lý nươc đi
+    // gọi phương thức handlePlayerMove(int row, int col) để thực hiện xử lý nước
+    // đi với 2 tham số đầu vào là toạ độ bàn cờ 2 chiều
     public void handlePlayerMove(int row, int col) {
+
+        // UC2.1.4  kiểm tra nước đi có hợp lệ
+        // nhận vào toạ độ ô cờ trên bàn cờ trả về kết quả là một số nguyên :
+        // - 0 --> nước đi không hợp lệ
+        // - 1 --> nước đi của người chơi
+        // - 2 --> nước đi của AI
         int player = board.makeMove(row, col);
-        if (player == 0)
+
+        // UC2.2.1 Nước đi không hợp lệ
+        // giá trị trả về từ phương thức của bước 2.1.4 là 0
+        // 0 là giá trị thể hiện nước đi không hợp lệ
+        if (player == 0) {
+            // UC 2.2.2. Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
+            // controller gọi phương thức showError của lớp View để hiển thị giao diện hộp thông báo
+            SwingUtilities.invokeLater(() -> view.showError("Nước đi không hợp lệ, vui lòng chọn nước đi khác"));
             return;
+        }
         view.updateBoard(board);
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
