@@ -1,0 +1,26 @@
+[
+  {
+    "playerName": "Player 1",
+    "difficulty": "Dễ",
+    "boardSize": "3x3",
+    "wins": 6,
+    "losses": 0,
+    "draws": 0
+  },
+  {
+    "playerName": "2",
+    "difficulty": "Dễ",
+    "boardSize": "3x3",
+    "wins": 4,
+    "losses": 0,
+    "draws": 2
+  },
+  {
+    "playerName": "6",
+    "difficulty": "Dễ",
+    "boardSize": "5x5",
+    "wins": 3,
+    "losses": 0,
+    "draws": 0
+  }
+]
