@@ -82,7 +82,17 @@ public class BoardController {
         if (player == 0) {
             // UC 2.2.2. Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
             // controller gọi phương thức showError của lớp View để hiển thị giao diện hộp thông báo
-            SwingUtilities.invokeLater(() -> view.showError("Nước đi không hợp lệ, vui lòng chọn nước đi khác"));
+            SwingUtilities.invokeLater(() -> {
+                // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
+                // gọi phương thức highlightInvalidCell() của lớp View
+                // để thực hiện hiệu ứng nhấp nháy màu đỏ trên ô cờ lỗi
+                view.highlightInvalidCell(row, col);
+
+                view.showError(
+                        "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
+                );
+
+            });
             return;
         }
         // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều

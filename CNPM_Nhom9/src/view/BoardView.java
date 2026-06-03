@@ -4,7 +4,10 @@ import controller.BoardController;
 import model.Board;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class BoardView extends JFrame {
     private BoardController controller;
@@ -203,5 +206,53 @@ public class BoardView extends JFrame {
     public void showError(String s) {
         JOptionPane.showMessageDialog(this,s);
         //Sau đó quay lại bước UC 2.1.1.
+    }
+
+    // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
+// nhận vào tọa độ hàng và cột của ô cờ mà người chơi vừa chọn
+// hệ thống thực hiện hiệu ứng nhấp nháy màu đỏ để giúp người chơi
+// dễ dàng nhận biết ô cờ không hợp lệ đã được chọn trước đó
+    public void highlightInvalidCell(int row, int col) {
+
+        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+        JButton btn = buttons[row][col];
+
+        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
+        Color normal = btn.getBackground();
+
+        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
+        // mỗi lần kích hoạt cách nhau 150 mili giây
+        Timer timer = new Timer(150, null);
+
+        timer.addActionListener(new ActionListener() {
+
+            // biến đếm số lần thay đổi màu
+            int count = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
+                if (count % 2 == 0) {
+                    btn.setBackground(Color.RED);
+                }
+                // các lần lẻ khôi phục màu nền ban đầu
+                else {
+                    btn.setBackground(normal);
+                }
+
+                count++;
+
+                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
+                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
+                if (count >= 6) {
+                    btn.setBackground(normal);
+                    timer.stop();
+                }
+            }
+        });
+
+        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+        timer.start();
     }
 }

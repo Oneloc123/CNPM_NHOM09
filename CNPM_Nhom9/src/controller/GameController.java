@@ -17,14 +17,21 @@ public class GameController {
 				.getSelectedItem()
 				.toString();
 
+		// lấy tên người chơi
+		String playername = "Anh Hung don doc";
+		// lấy lượt đi
+		boolean isPlayerFirst = true;
+		// lấy kích thước bàn cờ
+		int size = 5;
+
 		// Đóng giao diện menu chính
 		gameView.dispose();
 
 		// Khởi tạo giao diện bàn cờ
-		BoardView boardView = new BoardView(difficulty);
+		BoardView boardView = new BoardView(difficulty,playername,isPlayerFirst,size);
 
 		// Khởi tạo controller quản lý bàn cờ
-		BoardController boardCtrl = new BoardController(difficulty);
+		BoardController boardCtrl = new BoardController(difficulty,playername,isPlayerFirst,size);
 
 		// Gán view cho controller
 		boardCtrl.setView(boardView);
