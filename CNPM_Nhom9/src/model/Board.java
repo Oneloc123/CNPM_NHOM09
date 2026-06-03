@@ -29,14 +29,37 @@ public class Board {
 		return this.moveCount;
 	}
 
+
+    // UC 2.1.4 Hệ thống kiểm tra tính hợp lệ của nước đi
+    // Mô tả:
+    // Kiểm tra:
+    // tọa độ có nằm trong phạm vi bàn cờ.
+    // Ô cờ đã được đánh dấu trước đó hay chưa.
 	public synchronized int makeMove(int row, int col) {
+        //        Kết quả trả về
+        //
+        //        Giá trị	Ý nghĩa
+        //        0	        Nước đi không hợp lệ
+        //        1	        Người chơi X
+        //        2	        Người chơi O
+
+
 		if (row < 0 || row >= size || col < 0 || col >= size || matrix[row][col] != 0) {
+            // UC 2.2.1 nước đi không hợp lệ như các trường hợp đã nêu trên trả về giá trị 0
 			return 0;
 		}
-		int player = isXTurn ? 1 : 2;
-		matrix[row][col] = player;
-		isXTurn = !isXTurn;
-		this.moveCount++;
+
+        // UC 2.1.5 Hệ thống ghi nhận nước đi hợp lệ
+        // ( nếu kết quả kiểm tra của bước 2.1.4 khác 0)
+        //          Mô tả:
+        //                  Đánh dấu quân cờ vào ma trận bàn cờ.
+        //                  Cập nhật lượt chơi.
+        //                  Tăng số lượng nước đi.
+
+		int player = isXTurn ? 1 : 2; // kiểm tra lượt của người hoặc AI
+		matrix[row][col] = player; // đánh dấu trên bàn cờ ma trận 2 chiều lượt của người hoặc AI đã đi
+		isXTurn = !isXTurn; // đổi lượt giữa X và O
+		this.moveCount++; // tăng số lượng nước đi
 		return player;
 	}
 
