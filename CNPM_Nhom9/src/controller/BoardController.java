@@ -57,17 +57,24 @@ public class BoardController {
         }
     }
 
-    // UC 2.1.3 Hệ thống gọi controller để xử lý nươc đi
-    // gọi phương thức handlePlayerMove(int row, int col) để thực hiện xử lý nước
-    // đi với 2 tham số đầu vào là toạ độ bàn cờ 2 chiều
+    // UC 2.1.3 Controller tiếp nhận yêu cầu thực hiện nước đi
+    // Mô tả:
+    // Controller nhận tọa độ ô cờ từ View.
+    // Chuyển thông tin cho lớp Board kiểm tra tính hợp lệ của nước đi.
     public void handlePlayerMove(int row, int col) {
 
-        // UC2.1.4  kiểm tra nước đi có hợp lệ
-        // nhận vào toạ độ ô cờ trên bàn cờ trả về kết quả là một số nguyên :
-        // - 0 --> nước đi không hợp lệ
-        // - 1 --> nước đi của người chơi
-        // - 2 --> nước đi của AI
+        // UC 2.1.4 Hệ thống kiểm tra tính hợp lệ của nước đi
+        // Mô tả:
+        // Kiểm tra:
+        // tọa độ có nằm trong phạm vi bàn cờ.
+        // Ô cờ đã được đánh dấu trước đó hay chưa.
         int player = board.makeMove(row, col);
+//        Kết quả trả về
+//
+//        Giá trị	Ý nghĩa
+//        0	        Nước đi không hợp lệ
+//        1	        Người chơi X
+//        2	        Người chơi O
 
         // UC2.2.1 Nước đi không hợp lệ
         // giá trị trả về từ phương thức của bước 2.1.4 là 0
@@ -82,6 +89,16 @@ public class BoardController {
         // vẽ lại bàn cờ dựa trên dối tượng matrix 2 chiều của lớp board
         view.updateBoard(board);
         // UC2.1.7 : hệ thống chuyển sang UC-004 để kiểm tra kết thúc ván đấu
+//        Mô tả:
+//
+//        Sau khi ghi nhận nước đi, hệ thống kiểm tra:
+//
+//        n quân liên tiếp theo hàng ngang.
+//        n quân liên tiếp theo hàng dọc.
+//        n quân liên tiếp theo đường chéo chính.
+//        n quân liên tiếp theo đường chéo phụ.
+//      ghi chú : n là số lượng quân để chiến thắng
+
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
             // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
@@ -91,13 +108,18 @@ public class BoardController {
             SwingUtilities.invokeLater(() -> view.showEndGame(playerName + " thắng!"));
             return;
         }
-
+        //UC 2.1.8 Hệ thống kiểm tra hòa
+        //Nếu toàn bộ bàn cờ đã được đánh dấu và không có người thắng:
         if (board.isBoardFull()) {
             // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
             SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
             return;
         }
-        // UC 2.1.8 : Hệ thống chuyển san lượt của AI nếu ván đấu chưa kết thúc
+        // UC 2.1.9 : Hệ thống chuyển san lượt cho đối thủ Nếu chưa thắng và chưa hòa
+//            Mô tả:
+//                Khóa thao tác người chơi.
+//                Hiển thị trạng thái AI đang suy nghĩ.
+//                Chuyển sang UC-003 Thực hiện nước đi của AI.
         view.setInputEnabled(false);
         view.setStatus("Máy đang suy nghĩ...");
         triggerAIMove();

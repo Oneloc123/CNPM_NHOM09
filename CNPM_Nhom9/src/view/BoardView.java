@@ -93,8 +93,17 @@ public class BoardView extends JFrame {
         return btn;
     }
 
-    // UC 2.1.2 : HỆ thống nhận sự kiện nút ấn từ người chơi
-    // gọi phương thức void onCellClicked(int row, int col) để xử lý sự kiện nút ấn
+//    UC 2.1.1 Người chơi chọn ô cờ
+//
+//    Người chơi nhấn chuột vào một ô trên bàn cờ.
+//
+//    UC 2.1.2 Hệ thống nhận sự kiện từ giao diện
+//
+//    Mô tả:
+//
+//    Nhận tọa độ hàng (row) và cột (col) của ô được chọn.
+//    Kiểm tra ván đấu đã kết thúc hay chưa.
+//    Nếu chưa kết thúc, chuyển yêu cầu sang Controller xử lý.
 
     private void onCellClicked(int row, int col) {
         if (gameOver)      // kiểm tra ván đã kết thúc chưa
@@ -110,18 +119,22 @@ public class BoardView extends JFrame {
                 JButton btn = buttons[i][j];
                 
                 int cell = board.getCell(i, j);
+
+//                Đọc trạng thái ma trận bàn cờ và cập nhật giao diện
                 if (cell == 1) {
                     btn.setText("X");
                     btn.setForeground(new Color(220, 50, 50));
+                    btn.setBackground(Color.YELLOW); // hiển thị hiệu ứng ô vừa đánh
                 } else if (cell == 2) {
                     btn.setText("O");
                     btn.setForeground(new Color(30, 100, 200));
+                    btn.setBackground(Color.YELLOW); // hiển thị hiệu ứng ô vừa đánh
                 } else {
                     btn.setText(""); // Đảm bảo ô trống khi restart
                 }
             }
         }
-        // thiết lập thanh trạng thái chuyển lượt đi
+        // cập nhật thanh trạng thái
         lblStatus.setText("Lượt của: " + (board.isXTurn() ? xPlayerName : oPlayerName));
     }
 
@@ -189,5 +202,6 @@ public class BoardView extends JFrame {
     // khởi tạo giao diện bằng phương thức showMessageDialog của lớp JOptionPane
     public void showError(String s) {
         JOptionPane.showMessageDialog(this,s);
+        //Sau đó quay lại bước UC 2.1.1.
     }
 }
