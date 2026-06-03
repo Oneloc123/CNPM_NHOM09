@@ -297,4 +297,60 @@ public class AIService {
             return minScore;
         }
     }
+// =============== NÂNG CẤP 3: HÀM ĐÁNH GIÁ HEURISTIC ===============(T5)    
+    /**
+     * UC-003.3.4 - Đánh giá heuristic bàn cờ
+     *
+     * Được gọi khi:
+     * - Hết độ sâu tìm kiếm.
+     * - Chưa xác định thắng/thua.
+     *
+     * Điểm đánh giá:
+     *
+     * Score =
+     *      AI Score
+     *    - Human Score
+     *
+     * Dương:
+     *      AI đang có lợi thế.
+     *
+     * Âm:
+     *      Người chơi đang có lợi thế.
+     */
+    private int evaluateBoard(Board board) {
+        int aiScore = 0;	// Điểm của AI
+        int humanScore = 0;	// Điểm của người chơi
+        int size = board.getSize();
+        int center = size / 2;
+        
+        // Đánh giá từng ô trên bàn cờ
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                int cell = board.getCell(i, j);
+                if (cell != 0) {
+                	// Tính điểm cho vị trí này dựa trên các pattern
+                    int cellScore = evaluatePosition(board, i, j, cell);
+                    
+                    // Điểm thưởng vị trí chiến lược
+                    int positionBonus = 0;
+                    if (i == center && j == center) {
+                        positionBonus = CENTER_BONUS;		// Trung tâm
+                    } else if (Math.abs(i - center) <= 1 && Math.abs(j - center) <= 1) {
+                        positionBonus = CENTER_BONUS / 2;	// Gần trung tâm
+                    } else if (i == 0 || i == size-1 || j == 0 || j == size-1) {
+                        positionBonus = EDGE_BONUS;			// Cạnh bàn cờ
+                    }
+                    
+                    // Cộng điểm cho AI hoặc người chơi
+                    if (cell == aiPlayerId) {
+                        aiScore += cellScore + positionBonus;
+                    } else {
+                        humanScore += cellScore + positionBonus;
+                    }
+                }
+            }
+        }
+        // Trả về chênh lệch: AI càng cao càng tốt
+        return aiScore - humanScore;
+    }
 }
