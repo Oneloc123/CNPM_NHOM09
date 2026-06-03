@@ -4,7 +4,10 @@ import controller.BoardController;
 import model.Board;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class BoardView extends JFrame {
     private BoardController controller;
@@ -93,12 +96,25 @@ public class BoardView extends JFrame {
         return btn;
     }
 
-    private void onCellClicked(int row, int col) {
-        if (gameOver)
-            return;
-        controller.handlePlayerMove(row, col);
-    }
+//    UC 2.1.1 Người chơi chọn ô cờ
+//
+//    Người chơi nhấn chuột vào một ô trên bàn cờ.
+//
+//    UC 2.1.2 Hệ thống nhận sự kiện từ giao diện
+//
+//    Mô tả:
+//
+//    Nhận tọa độ hàng (row) và cột (col) của ô được chọn.
+//    Kiểm tra ván đấu đã kết thúc hay chưa.
+//    Nếu chưa kết thúc, chuyển yêu cầu sang Controller xử lý.
 
+    private void onCellClicked(int row, int col) {
+        if (gameOver)      // kiểm tra ván đã kết thúc chưa
+            return;
+        controller.handlePlayerMove(row, col);  // UC 2.1.3 Hệ thống gọi controller để xử lý nươc đi
+    }
+    // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
+    // vẽ lại bàn cờ dựa trên dối tượng board
     public void updateBoard(Board board) {
         // ĐÃ SỬA: Bỏ maxLogicSize cũ, chạy hết kích thước thực tế của bàn cờ
         for (int i = 0; i < size; i++) {
@@ -106,17 +122,22 @@ public class BoardView extends JFrame {
                 JButton btn = buttons[i][j];
                 
                 int cell = board.getCell(i, j);
+
+//                Đọc trạng thái ma trận bàn cờ và cập nhật giao diện
                 if (cell == 1) {
                     btn.setText("X");
                     btn.setForeground(new Color(220, 50, 50));
+                    btn.setBackground(Color.YELLOW); // hiển thị hiệu ứng ô vừa đánh
                 } else if (cell == 2) {
                     btn.setText("O");
                     btn.setForeground(new Color(30, 100, 200));
+                    btn.setBackground(Color.YELLOW); // hiển thị hiệu ứng ô vừa đánh
                 } else {
                     btn.setText(""); // Đảm bảo ô trống khi restart
                 }
             }
         }
+        // cập nhật thanh trạng thái
         lblStatus.setText("Lượt của: " + (board.isXTurn() ? xPlayerName : oPlayerName));
     }
 
@@ -179,5 +200,59 @@ public class BoardView extends JFrame {
         } else {
             controller.handleGoHome();
         }
+    }
+    // UC 2.2.2 Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
+    // khởi tạo giao diện bằng phương thức showMessageDialog của lớp JOptionPane
+    public void showError(String s) {
+        JOptionPane.showMessageDialog(this,s);
+        //Sau đó quay lại bước UC 2.1.1.
+    }
+
+    // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
+// nhận vào tọa độ hàng và cột của ô cờ mà người chơi vừa chọn
+// hệ thống thực hiện hiệu ứng nhấp nháy màu đỏ để giúp người chơi
+// dễ dàng nhận biết ô cờ không hợp lệ đã được chọn trước đó
+    public void highlightInvalidCell(int row, int col) {
+
+        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+        JButton btn = buttons[row][col];
+
+        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
+        Color normal = btn.getBackground();
+
+        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
+        // mỗi lần kích hoạt cách nhau 150 mili giây
+        Timer timer = new Timer(150, null);
+
+        timer.addActionListener(new ActionListener() {
+
+            // biến đếm số lần thay đổi màu
+            int count = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
+                if (count % 2 == 0) {
+                    btn.setBackground(Color.RED);
+                }
+                // các lần lẻ khôi phục màu nền ban đầu
+                else {
+                    btn.setBackground(normal);
+                }
+
+                count++;
+
+                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
+                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
+                if (count >= 6) {
+                    btn.setBackground(normal);
+                    timer.stop();
+                }
+            }
+        });
+
+        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+        timer.start();
     }
 }
