@@ -101,7 +101,8 @@ public class BoardView extends JFrame {
             return;
         controller.handlePlayerMove(row, col);  // UC 2.1.3 Hệ thống gọi controller để xử lý nươc đi
     }
-
+    // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
+    // vẽ lại bàn cờ dựa trên dối tượng board
     public void updateBoard(Board board) {
         // ĐÃ SỬA: Bỏ maxLogicSize cũ, chạy hết kích thước thực tế của bàn cờ
         for (int i = 0; i < size; i++) {
@@ -120,6 +121,7 @@ public class BoardView extends JFrame {
                 }
             }
         }
+        // thiết lập thanh trạng thái chuyển lượt đi
         lblStatus.setText("Lượt của: " + (board.isXTurn() ? xPlayerName : oPlayerName));
     }
 

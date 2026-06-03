@@ -78,9 +78,13 @@ public class BoardController {
             SwingUtilities.invokeLater(() -> view.showError("Nước đi không hợp lệ, vui lòng chọn nước đi khác"));
             return;
         }
+        // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
+        // vẽ lại bàn cờ dựa trên dối tượng matrix 2 chiều của lớp board
         view.updateBoard(board);
+        // UC2.1.7 : hệ thống chuyển sang UC-004 để kiểm tra kết thúc ván đấu
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
+            // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
             view.highlightWin(winLine, true);
             
             // Người chơi click chuột thắng -> Thông báo Người chơi thắng
@@ -89,10 +93,11 @@ public class BoardController {
         }
 
         if (board.isBoardFull()) {
+            // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
             SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
             return;
         }
-
+        // UC 2.1.8 : Hệ thống chuyển san lượt của AI nếu ván đấu chưa kết thúc
         view.setInputEnabled(false);
         view.setStatus("Máy đang suy nghĩ...");
         triggerAIMove();
