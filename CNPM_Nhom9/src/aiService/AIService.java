@@ -152,67 +152,149 @@ public class AIService {
         return prioritizedCells.get(rand.nextInt(prioritizedCells.size()));
     }
 
-	private int[] getBestMove(Board board, int depth) {
-		if (board.isBoardFull())
-			return null;
+// =============== NÂNG CẤP 2: CHẾ ĐỘ KHÓ ===============
+    /**
+     * AF-02 - Chế độ Khó
+     * Minimax + Alpha-Beta Pruning + Heuristic
+     * Thực hiện:
+     * 3.3.1 Kiểm tra bàn cờ đầy.
+     * 3.3.2 Xác định độ sâu:
+     *      - Bàn 3x3 -> Depth = 8
+     *      - Bàn 5x5 -> Depth = 4
+     * 3.3.3 Sắp xếp nước đi theo heuristic.
+     * 3.3.4 Duyệt từng nước đi: Thử đánh, dánh giá bằng Alpha-Beta
+     * 3.3.6 Chọn nước đi có điểm cao nhất.
+     * Kết quả: Trả về nước đi tối ưu cho AI.
+     */
+    private int[] getBestMoveWithPruning(Board board) {
+    	// Kiểm tra bàn cờ đã đầy chưa
+        if (board.isBoardFull()) 
+        	return null;
+        
+        // Lấy kích thước bàn cờ
+        int size = board.getSize();
+        
+        // Điều chỉnh độ sâu tìm kiếm theo kích thước bàn cờ
+	    // - Bàn 3x3: depth = 8 (tìm gần hết toàn bộ khả năng)
+	    // - Bàn 5x5: depth = 4 (giới hạn để tránh treo máy do số ô nhiều)
+        int depth = (size == 5) ? 4 : 8;  
+        
+        // Điểm tốt nhất ban đầu
+        int bestScore = Integer.MIN_VALUE;
+        
+        // Nước đi tốt nhất
+        int[] bestMove = null;
+        
+        // Sắp xếp nước đi theo heuristic để tăng hiệu quả pruning
+        List<int[]> moves = orderMovesByHeuristic(board);
+        
+        // Duyệt từng nước đi khả thi
+        for (int[] move : moves) {
+        	 // Thử đánh nước đi 
+            int player = board.makeMove(move[0], move[1]);
+            
+            // Gọi đệ quy Alpha-Beta để đánh giá nước đi
+            int score = alphaBeta(board, false, Integer.MIN_VALUE, Integer.MAX_VALUE, move[0], move[1], player, depth - 1);
+            
+            // Hoàn tác nước đi để trả bàn cờ về trạng thái cũ
+            board.undoMove(move[0], move[1]);
+            
+            // Cập nhật nước đi tốt nhất
+            if (score > bestScore) {
+                bestScore = score;	// Cập nhật điểm tốt nhất
+                bestMove = move;	// Lưu lại nước đi tốt nhất
+            }
+        }
+        return bestMove;
+    }
 
-		int bestScore = Integer.MIN_VALUE;
-		int[] bestMove = null;
-		int boardSize = board.getSize(); // ĐÃ SỬA
-
-		for (int i = 0; i < boardSize; i++) {
-			for (int j = 0; j < boardSize; j++) {
-				if (board.getCell(i, j) == 0) {
-					int player = board.makeMove(i, j);
-					int score = minimax(board, false, i, j, player, depth - 1);
-					board.undoMove(i, j);
-
-					if (score > bestScore) {
-						bestScore = score;
-						bestMove = new int[] { i, j };
-					}
-				}
-			}
-		}
-		return bestMove;
-	}
-
-	private int minimax(Board board, boolean isMaximizing, int lastRow, int lastCol, int lastPlayer, int depth) {
-		if (board.getWinLine(lastRow, lastCol, lastPlayer) != null) {
-			return lastPlayer == this.aiPlayerId ? WIN_SCORE + depth : LOSE_SCORE - depth;
-		}
-
-		if (board.isBoardFull() || depth == 0) {
-			return 0;
-		}
-
-		int boardSize = board.getSize(); // ĐÃ SỬA
-		if (isMaximizing) {
-			int best = Integer.MIN_VALUE;
-			for (int i = 0; i < boardSize; i++) {
-				for (int j = 0; j < boardSize; j++) {
-					if (board.getCell(i, j) == 0) {
-						int player = board.makeMove(i, j);
-						int score = minimax(board, false, i, j, player, depth - 1);
-						board.undoMove(i, j);
-						best = Math.max(best, score);
-					}
-				}
-			}
-			return best;
-		} else {
-			int best = Integer.MAX_VALUE;
-			for (int i = 0; i < boardSize; i++) {
-				for (int j = 0; j < boardSize; j++) {
-					if (board.getCell(i, j) == 0) {
-						int player = board.makeMove(i, j);
-						int score = minimax(board, true, i, j, player, depth - 1);
-						board.undoMove(i, j);
-						best = Math.min(best, score);
-					}
-				}
-			}
-			return best;
-		}
-	}
+	* UC-003.3.4 - Đánh giá trạng thái bằng Alpha-Beta
+     * Thuật toán:
+     * - Mô phỏng các trạng thái tương lai.
+     * - Đánh giá thắng/thua.
+     * - Tối ưu bằng Alpha-Beta Pruning.
+     * Quy tắc:
+     * - AI thắng: WIN_SCORE + depth
+     * - AI thua: LOSE_SCORE - depth
+     * - Hết độ sâu: evaluateBoard()
+     * 3.3.5:
+     * Nếu beta <= alpha => Cắt tỉa nhánh hiện tại.
+     */
+    private int alphaBeta(Board board, boolean isMaximizing, int alpha, int beta, int lastRow, int lastCol, int lastPlayer, int depth) {
+        
+    	// TRƯỜNG HỢP 1: Phát hiện thắng/thua
+        if (board.getWinLine(lastRow, lastCol, lastPlayer) != null) {
+            if (lastPlayer == aiPlayerId) {
+                return WIN_SCORE + depth;  // AI thắng - cộng depth để ưu tiên thắng nhanh
+            } else {
+                return LOSE_SCORE - depth; // AI thua - trừ depth để tránh thua chậm
+            }
+        }
+        
+     // TRƯỜNG HỢP 2: Hết nước đi hoặc hết độ sâu -> đánh giá heuristic
+        if (board.isBoardFull() || depth == 0) {
+            return evaluateBoard(board);  
+        }
+        
+        int size = board.getSize();
+        
+      // TRƯỜNG HỢP 3: Lượt của AI (Maximizing - tìm điểm cao nhất)
+        if (isMaximizing) {
+        	// Giá trị lớn nhất tìm được
+            int maxScore = Integer.MIN_VALUE;
+            
+            // Sinh các nước đi
+            List<int[]> moves = orderMovesByHeuristic(board);
+            
+            for (int[] move : moves) {
+            	// Thử đánh nước đi 
+                int player = board.makeMove(move[0], move[1]);
+                
+                // Đệ quy xuống tầng tiếp theo
+                int score = alphaBeta(board, false, alpha, beta, move[0], move[1], player, depth - 1);
+                
+                // Hoàn tác
+                board.undoMove(move[0], move[1]);
+                
+                // Cập nhật max
+                maxScore = Math.max(maxScore, score);
+                
+                // Cập nhật alpha
+                alpha = Math.max(alpha, score);
+                
+                // Cắt tỉa Alpha-Beta: Nếu beta <= alpha, cắt nhánh này
+                if (beta <= alpha) break;  
+            }
+            return maxScore;
+        } 
+       // TRƯỜNG HỢP 4: Lượt của đối thủ (Minimizing - tìm điểm thấp nhất)
+        else {
+        	// Giá trị nhỏ nhất tìm được
+            int minScore = Integer.MAX_VALUE;
+            
+            // Sinh các nước đi
+            List<int[]> moves = orderMovesByHeuristic(board);
+            
+            for (int[] move : moves) {
+            	// Thử đánh nước đi 
+                int player = board.makeMove(move[0], move[1]);
+                
+                // Đệ quy xuống tầng tiếp theo
+                int score = alphaBeta(board, true, alpha, beta, move[0], move[1], player, depth - 1);
+                
+                // Hoàn tác
+                board.undoMove(move[0], move[1]);
+                
+                // Cập nhật min
+                minScore = Math.min(minScore, score);
+                
+                // Cập nhật beta
+                beta = Math.min(beta, score);
+                
+                // Cắt tỉa Alpha-Beta: Nếu beta <= alpha, cắt nhánh này
+                if (beta <= alpha) break;  
+            }
+            return minScore;
+        }
+    }
 }
