@@ -208,7 +208,7 @@ public class AIService {
         return bestMove;
     }
 
-	* UC-003.3.4 - Đánh giá trạng thái bằng Alpha-Beta
+	/* UC-003.3.4 - Đánh giá trạng thái bằng Alpha-Beta
      * Thuật toán:
      * - Mô phỏng các trạng thái tương lai.
      * - Đánh giá thắng/thua.
@@ -297,25 +297,16 @@ public class AIService {
             return minScore;
         }
     }
-// =============== NÂNG CẤP 3: HÀM ĐÁNH GIÁ HEURISTIC ===============(T5)    
+// =============== NÂNG CẤP 3: HÀM ĐÁNH GIÁ HEURISTIC ===============   
     /**
      * UC-003.3.4 - Đánh giá heuristic bàn cờ
-     *
      * Được gọi khi:
      * - Hết độ sâu tìm kiếm.
      * - Chưa xác định thắng/thua.
-     *
      * Điểm đánh giá:
-     *
-     * Score =
-     *      AI Score
-     *    - Human Score
-     *
-     * Dương:
-     *      AI đang có lợi thế.
-     *
-     * Âm:
-     *      Người chơi đang có lợi thế.
+     * Score = AI Score- Human Score
+     * Dương: AI đang có lợi thế.
+     * Âm: Người chơi đang có lợi thế.
      */
     private int evaluateBoard(Board board) {
         int aiScore = 0;	// Điểm của AI
@@ -352,5 +343,99 @@ public class AIService {
         }
         // Trả về chênh lệch: AI càng cao càng tốt
         return aiScore - humanScore;
+    }
+	    /**
+     * UC-003.3.4 - Phân tích một vị trí trên bàn cờ
+     * Kiểm tra 4 hướng:
+     * - Ngang
+     * - Dọc
+     * - Chéo chính
+     * - Chéo phụ
+     * Đếm:
+     * - Số quân liên tiếp.
+     * - Số đầu hở.
+     * Kết quả:
+     * Trả về điểm heuristic của vị trí.
+     */
+    private int evaluatePosition(Board board, int row, int col, int player) {
+        int totalScore = 0;
+        
+        // Kiểm tra 4 hướng: ngang, dọc, chéo chính, chéo phụ
+        int[][] directions = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
+        
+        for (int[] dir : directions) {
+            int count = 1;  	// Đếm số quân liên tiếp (bắt đầu từ ô hiện tại)
+            int openLeft = 0; 	// Đầu bên trái có trống
+            int openRight = 0;	// Đầu bên phải có trống
+            
+            // Đếm về 1 hướng
+            // Bắt đầu từ ô kế tiếp theo hướng hiện tại
+            int r = row + dir[0];
+            int c = col + dir[1];
+            // Đếm số quân liên tiếp cùng người chơi
+            while (isValid(r, c, board.getSize()) && board.getCell(r, c) == player) {
+                count++;
+                r += dir[0];
+                c += dir[1];
+            }
+            
+            // Kiểm tra đầu hở bên phải: Nếu sau chuỗi quân là ô trống => đầu phải là đầu hở
+            if (isValid(r, c, board.getSize()) && board.getCell(r, c) == 0) openRight++;
+            
+            // Đếm hướng ngược lại
+            r = row - dir[0];
+            c = col - dir[1];
+            // Đếm số quân liên tiếp ở chiều ngược lại
+            while (isValid(r, c, board.getSize()) && board.getCell(r, c) == player) {
+                count++;
+                r -= dir[0];
+                c -= dir[1];
+            }
+            
+            // Kiểm tra đầu hở bên trái: Nếu sau chuỗi quân là ô trống => đầu trái là đầu hở
+            if (isValid(r, c, board.getSize()) && board.getCell(r, c) == 0) openLeft++;
+            
+            // Tính điểm dựa trên số quân liên tiếp và đầu hở
+            totalScore += getPatternScore(count, openLeft > 0 || openRight > 0);
+        }
+        return totalScore;
+    }
+    
+    /**
+     * UC-003.3.4 - Quy đổi Pattern thành điểm
+     * Bảng điểm:
+     * 5 quân liên tiếp -> FIVE_IN_A_ROW
+     * 4 quân liên tiếp -> FOUR_IN_A_ROW
+     * 3 quân liên tiếp -> THREE_IN_A_ROW
+     * 2 quân liên tiếp -> TWO_IN_A_ROW
+     * 1 quân liên tiếp -> ONE_IN_A_ROW
+     * Pattern có đầu hở sẽ được ưu tiên hơn.
+     */
+    private int getPatternScore(int count, boolean isOpen) {
+        switch (count) {
+        	// 5 quân -> thắng tuyệt đối
+            case 5: return FIVE_IN_A_ROW;
+            // 4 quân: có hở thì nguy hiểm hơn
+            case 4: return isOpen ? FOUR_IN_A_ROW * 2 : FOUR_IN_A_ROW;
+            // 3 quân: có hở thì lợi thế lớn
+            case 3: return isOpen ? THREE_IN_A_ROW * 2 : THREE_IN_A_ROW;
+            // 2 quân: khởi đầu tốt
+            case 2: return isOpen ? TWO_IN_A_ROW * 2 : TWO_IN_A_ROW;
+            // 1 quân: khởi đầu
+            case 1: return ONE_IN_A_ROW;
+            // Không có pattern
+            default: return 0;
+        }
+    }
+    
+    /**
+     * Hàm hỗ trợ kiểm tra tọa độ hợp lệ.
+     * Được sử dụng trong:
+     * - Đánh giá heuristic.
+     * - Kiểm tra các hướng.
+     * - Sinh nước đi.
+     */
+    private boolean isValid(int row, int col, int size) {
+        return row >= 0 && row < size && col >= 0 && col < size;
     }
 }
