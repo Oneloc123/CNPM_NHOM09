@@ -209,53 +209,79 @@ public class BoardView extends JFrame {
         //Sau đó quay lại bước UC 2.1.1.
     }
 
-    // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
-// nhận vào tọa độ hàng và cột của ô cờ mà người chơi vừa chọn
-// hệ thống thực hiện hiệu ứng nhấp nháy màu đỏ để giúp người chơi
-// dễ dàng nhận biết ô cờ không hợp lệ đã được chọn trước đó
+    // HÀM highlightInvalidCell mới
+    // Nâng cấp highlightInvalidCell()— dùng TimerSwing sẵn, tránh memory leak
+    // UC 2.2.2a — nhấp nháy màu đỏ 3 lần rồi khôi phục
+    /**
+     * Làm nổi bật ô không hợp lệ bằng hiệu ứng nhấp nháy màu đỏ.
+     * Được gọi khi người chơi chọn một ô đã được đánh dấu trước đó.
+     *
+     * @param row hàng của ô không hợp lệ
+     * @param col cột của ô không hợp lệ
+     */
     public void highlightInvalidCell(int row, int col) {
-
-        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+        // Lấy nút tương ứng với vị trí ô cờ cần làm nổi bật
         JButton btn = buttons[row][col];
-
-        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
-        Color normal = btn.getBackground();
-
-        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
-        // mỗi lần kích hoạt cách nhau 150 mili giây
+        // Lưu lại màu nền ban đầu để khôi phục sau khi hiệu ứng kết thúc
+        Color originalBg = btn.getBackground();
+        // Biến đếm số lần đổi màu.
+        // Sử dụng mảng để có thể truy cập và thay đổi bên trong lambda expression.
+        int[] count = {0};
+        // Tạo bộ đếm thời gian với chu kỳ 150ms
         Timer timer = new Timer(150, null);
-
-        timer.addActionListener(new ActionListener() {
-
-            // biến đếm số lần thay đổi màu
-            int count = 0;
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
-                if (count % 2 == 0) {
-                    btn.setBackground(Color.RED);
-                }
-                // các lần lẻ khôi phục màu nền ban đầu
-                else {
-                    btn.setBackground(normal);
-                }
-
-                count++;
-
-                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
-                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
-                if (count >= 6) {
-                    btn.setBackground(normal);
-                    timer.stop();
-                }
+        // Thêm sự kiện thực hiện mỗi khi Timer kích hoạt
+        timer.addActionListener(e -> {
+            // Chuyển đổi qua lại giữa màu đỏ và màu nền ban đầu
+            // nhằm tạo hiệu ứng nhấp nháy cảnh báo
+            btn.setBackground(count[0] % 2 == 0 ? Color.RED : originalBg);
+            // Sau 6 lần đổi màu thì dừng hiệu ứng
+            if (++count[0] >= 6) {
+                // Khôi phục màu nền ban đầu của ô cờ
+                btn.setBackground(originalBg);
+                // Dừng Timer để tránh tiếp tục thực hiện hiệu ứng
+                ((Timer) e.getSource()).stop();
             }
         });
-
-        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+        // Cho phép Timer lặp lại nhiều lần
+        timer.setRepeats(true);
+        // Bắt đầu hiệu ứng nhấp nháy
         timer.start();
     }
+
+    // HÀM highlightInvalidCell cũ
+//    public void highlightInvalidCell(int row, int col) {
+//        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+//        JButton btn = buttons[row][col];
+//        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
+//        Color normal = btn.getBackground();
+//        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
+//        // mỗi lần kích hoạt cách nhau 150 mili giây
+//        Timer timer = new Timer(150, null);
+//        timer.addActionListener(new ActionListener() {
+//            // biến đếm số lần thay đổi màu
+//            int count = 0;
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
+//                if (count % 2 == 0) {
+//                    btn.setBackground(Color.RED);
+//                }
+//                // các lần lẻ khôi phục màu nền ban đầu
+//                else {
+//                    btn.setBackground(normal);
+//                }
+//                count++;
+//                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
+//                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
+//                if (count >= 6) {
+//                    btn.setBackground(normal);
+//                    timer.stop();
+//                }
+//            }
+//        });
+//        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+//        timer.start();
+//    }
 
     public void lockBoard() {
         this.gameOver = true;
