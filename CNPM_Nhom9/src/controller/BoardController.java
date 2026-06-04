@@ -115,14 +115,16 @@ public class BoardController {
             view.highlightWin(winLine, true);
             
             // Người chơi click chuột thắng -> Thông báo Người chơi thắng
-            SwingUtilities.invokeLater(() -> view.showEndGame(playerName + " thắng!"));
+            // SwingUtilities.invokeLater(() -> view.showEndGame(playerName + " thắng!"));
+            notifyGameEnd(row, col, player, true);
             return;
         }
         //UC 2.1.8 Hệ thống kiểm tra hòa
         //Nếu toàn bộ bàn cờ đã được đánh dấu và không có người thắng:
         if (board.isBoardFull()) {
             // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
-            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+            // SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+            notifyGameEnd(row, col, player, true);
             return;
         }
         // UC 2.1.9 : Hệ thống chuyển san lượt cho đối thủ Nếu chưa thắng và chưa hòa
@@ -158,12 +160,14 @@ public class BoardController {
                         view.highlightWin(winLine, false);
                         
                         // Luồng tính toán của Máy thắng -> Thông báo Máy thắng
-                        SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                        // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                        notifyGameEnd(move[0], move[1], player, false);
                         return;
                     }
 
                     if (board.isBoardFull()) {
-                        SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                        // SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                        notifyGameEnd(move[0], move[1], player, false);
                         return;
                     }
 
@@ -175,20 +179,63 @@ public class BoardController {
         }.execute();
     }
 
-    public void handleRestart() {
-        String difficulty = ai.getDifficulty();
-        view.dispose();
+    // UC-004: Tạm thời không sử dụng [NOTE]
+    // public void handleRestart() {
+    //     String difficulty = ai.getDifficulty();
+    //     view.dispose();
 
-        // Truyền đầy đủ tham số bao gồm cả 'size' vào ván đấu mới
-        BoardView       newView = new BoardView(difficulty, playerName, isPlayerFirst, size);
-        BoardController newCtrl = new BoardController(difficulty, playerName, isPlayerFirst, size);
-        newCtrl.setView(newView);
-        newView.setController(newCtrl);
-        newView.setVisible(true);
-    }
+    //     // Truyền đầy đủ tham số bao gồm cả 'size' vào ván đấu mới
+    //     BoardView       newView = new BoardView(difficulty, playerName, isPlayerFirst, size);
+    //     BoardController newCtrl = new BoardController(difficulty, playerName, isPlayerFirst, size);
+    //     newCtrl.setView(newView);
+    //     newView.setController(newCtrl);
+    //     newView.setVisible(true);
+    // }
 
-    public void handleGoHome() {
-        view.dispose();
-        new GameController();
+    // UC-004: Tạm thời không sử dụng [NOTE]
+    // public void handleGoHome() {
+    //     view.dispose();
+    //     new GameController();
+    // }
+
+    private void notifyGameEnd(int row, int col, int player, boolean isPlayerMove) {
+        int[][] winLine = board.getWinLine(row, col, player);
+        
+        // Luồng chính: Có bên chiến thắng
+        if (winLine != null) {
+            view.lockBoard();
+            view.highlightWinLine(winLine, isPlayerMove);
+            
+            String resultMessage = isPlayerMove ? (playerName + " thắng!") : "Máy thắng!";
+            
+            // Khởi chạy màn hình Result độc lập
+            SwingUtilities.invokeLater(() -> {
+                ResultController resultCtrl = new ResultController(
+                    resultMessage, board.getMoveCount(), ai.getDifficulty(), playerName, isPlayerFirst, size, view
+                );
+                resultCtrl.showResult();
+            });
+            return;
+        }
+    
+        // Luồng thay thế AF-01: Kết quả Hòa cờ
+        if (board.isBoardFull()) {
+            view.lockBoard();
+            
+            SwingUtilities.invokeLater(() -> {
+                ResultController resultCtrl = new ResultController(
+                    "Hòa!", board.getMoveCount(), ai.getDifficulty(), playerName, isPlayerFirst, size, view
+                );
+                resultCtrl.showResult();
+            });
+            return;
+        }
+    
+        // Luồng thay thế AF-02: Ván đấu tiếp tục
+        if (isPlayerMove) {
+            view.setInputEnabled(false);
+            view.setStatus("Máy đang suy nghĩ...");
+            triggerAIMove();
+        }
     }
 }

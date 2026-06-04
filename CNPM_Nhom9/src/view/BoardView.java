@@ -171,36 +171,37 @@ public class BoardView extends JFrame {
         }
     }
 
-    public void showEndGame(String message) {
-        gameOver = true;
-        lblStatus.setText(message);
+    // UC-004: Không sử dụng màn hình hiển thị cũ [NOTE]
+    // public void showEndGame(String message) {
+    //     gameOver = true;
+    //     lblStatus.setText(message);
 
-        for (JButton[] row : buttons) {
-            for (JButton btn : row) {
-                if (btn.getText().isEmpty()) {
-                    btn.setEnabled(false);
-                }
-            }
-        }
+    //     for (JButton[] row : buttons) {
+    //         for (JButton btn : row) {
+    //             if (btn.getText().isEmpty()) {
+    //                 btn.setEnabled(false);
+    //             }
+    //         }
+    //     }
 
-        Object[] options = {"Chơi lại", "Trang chủ"};
-        int choice = JOptionPane.showOptionDialog(
-                this,
-                message + "\nBạn muốn làm gì tiếp theo?",
-                "Kết thúc ván đấu",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.INFORMATION_MESSAGE,
-                null,
-                options,
-                options[0]
-        );
+    //     Object[] options = {"Chơi lại", "Trang chủ"};
+    //     int choice = JOptionPane.showOptionDialog(
+    //             this,
+    //             message + "\nBạn muốn làm gì tiếp theo?",
+    //             "Kết thúc ván đấu",
+    //             JOptionPane.DEFAULT_OPTION,
+    //             JOptionPane.INFORMATION_MESSAGE,
+    //             null,
+    //             options,
+    //             options[0]
+    //     );
 
-        if (choice == 0) {
-            controller.handleRestart();
-        } else {
-            controller.handleGoHome();
-        }
-    }
+    //     if (choice == 0) {
+    //         controller.handleRestart();
+    //     } else {
+    //         controller.handleGoHome();
+    //     }
+    // }
     // UC 2.2.2 Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
     // khởi tạo giao diện bằng phương thức showMessageDialog của lớp JOptionPane
     public void showError(String s) {
@@ -254,5 +255,32 @@ public class BoardView extends JFrame {
 
         // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
         timer.start();
+    }
+
+    public void lockBoard() {
+        this.gameOver = true;
+        for (JButton[] row : buttons) {
+            for (JButton btn : row) {
+                if (btn.getText().isEmpty()) {
+                    btn.setEnabled(false);
+                }
+            }
+        }
+    }
+
+    public void highlightWinLine(int[][] winLine, boolean isPlayer) {
+        if (winLine == null) return;
+
+        Color bgColor = isPlayer
+                ? new Color(220, 70, 70)       // Màu đỏ cho người chơi thắng
+                : new Color(60, 130, 190);     // Màu xanh cho máy thắng
+
+        for (int[] pos : winLine) {
+            JButton btn = buttons[pos[0]][pos[1]];
+            btn.setBackground(bgColor);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
+        }
     }
 }
