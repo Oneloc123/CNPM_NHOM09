@@ -156,13 +156,34 @@ public class BoardController {
     }
 
     private void triggerAIMove() {
+        // Tránh gọi AI nhiều lần cùng lúc
+        if (isAIPlaying || isGameEnded) {
+            return;
+        }
+        // Đánh dấu AI đang xử lý
+        isAIPlaying = true;
         new SwingWorker<int[], Void>() {
-
+        	/**
+        	 * UC-003.1.1: AI suy nghĩ ở luồng nền.
+        	 * Hệ thống:
+        	 * - Giữ giao diện không bị treo.
+        	 * - Hiển thị trạng thái: "Máy đang suy nghĩ..."
+        	 * UC-003.1.2: Xác định độ khó:
+        	 * - Dễ  -> AF-01
+        	 * - Khó -> AF-02
+        	 * @return nước đi AI chọn.
+        	 */
             @Override
             protected int[] doInBackground() {
+                // Thêm độ trễ nhỏ để tạo cảm giác tự nhiên (50-200ms)
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                // Tìm nước đi tốt nhất
                 return ai.getNextMove(board);
             }
-
             @Override
             protected void done() {
                 try {
