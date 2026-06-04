@@ -5,6 +5,7 @@ import javax.swing.SwingWorker;
 
 import aiService.AIService;
 import model.Board;
+import model.MoveRecord;
 import view.BoardView;
 
 public class BoardController {
@@ -95,6 +96,9 @@ public class BoardController {
             });
             return;
         }
+        // ── ghi lịch sử ─────────────────────────────
+        recordMove(row, col, player);
+
         // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
         // vẽ lại bàn cờ dựa trên dối tượng matrix 2 chiều của lớp board
         view.updateBoard(board);
@@ -137,15 +141,20 @@ public class BoardController {
         triggerAIMove();
     }
 
-   /**
-     * UC-003.1.0: Hệ thống tự động kích hoạt lượt AI sau khi người chơi hoàn thành nước đi hợp lệ.
-     * Kiểm tra:
-     * - AI có đang chạy hay không.
-     * - Game đã kết thúc hay chưa.
-     * Nếu hợp lệ:
-     * - Đánh dấu AI đang xử lý.
-     * - Tạo SwingWorker chạy nền.
+    /**
+     * Tính điểm nước đi vừa thực hiện, cập nhật tổng điểm,
+     * tạo MoveRecord và gửi lên View để hiển thị.
      */
+    private void recordMove(int row, int col, int player) {
+        MoveRecord rec = new MoveRecord(
+                board.getMoveCount(),   // thứ tự nước đi (đã tăng sau makeMove)
+                player,
+                row, col
+        );
+
+        SwingUtilities.invokeLater(() -> view.addMoveRecord(rec));
+    }
+
     private void triggerAIMove() {
         // Tránh gọi AI nhiều lần cùng lúc
         if (isAIPlaying || isGameEnded) {
@@ -182,13 +191,16 @@ public class BoardController {
                     if (move == null) return;
 
                     int player = board.makeMove(move[0], move[1]);
+
+                    // ── ghi lịch sử (AI) ──────────────
+                    recordMove(move[0], move[1], player);
                     view.updateBoard(board);
                     view.setInputEnabled(true);
 
                     int[][] winLine = board.getWinLine(move[0], move[1], player);
                     if (winLine != null) {
                         view.highlightWin(winLine, false);
-                        
+
                         // Luồng tính toán của Máy thắng -> Thông báo Máy thắng
                         // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
                         notifyGameEnd(move[0], move[1], player, false);
@@ -230,14 +242,14 @@ public class BoardController {
 
     private void notifyGameEnd(int row, int col, int player, boolean isPlayerMove) {
         int[][] winLine = board.getWinLine(row, col, player);
-        
+
         // Luồng chính: Có bên chiến thắng
         if (winLine != null) {
             view.lockBoard();
             view.highlightWinLine(winLine, isPlayerMove);
-            
+
             String resultMessage = isPlayerMove ? (playerName + " thắng!") : "Máy thắng!";
-            
+
             // Khởi chạy màn hình Result độc lập
             SwingUtilities.invokeLater(() -> {
                 ResultController resultCtrl = new ResultController(
@@ -247,11 +259,11 @@ public class BoardController {
             });
             return;
         }
-    
+
         // Luồng thay thế AF-01: Kết quả Hòa cờ
         if (board.isBoardFull()) {
             view.lockBoard();
-            
+
             SwingUtilities.invokeLater(() -> {
                 ResultController resultCtrl = new ResultController(
                     "Hòa!", board.getMoveCount(), ai.getDifficulty(), playerName, isPlayerFirst, size, view
@@ -260,7 +272,7 @@ public class BoardController {
             });
             return;
         }
-    
+
         // Luồng thay thế AF-02: Ván đấu tiếp tục
         if (isPlayerMove) {
             view.setInputEnabled(false);
