@@ -155,6 +155,15 @@ public class BoardController {
         SwingUtilities.invokeLater(() -> view.addMoveRecord(rec));
     }
 
+/**
+     * UC-003.1.0: Hệ thống tự động kích hoạt lượt AI sau khi người chơi hoàn thành nước đi hợp lệ.
+     * Kiểm tra:
+     * - AI có đang chạy hay không.
+     * - Game đã kết thúc hay chưa.
+     * Nếu hợp lệ:
+     * - Đánh dấu AI đang xử lý.
+     * - Tạo SwingWorker chạy nền.
+     */
     private void triggerAIMove() {
         // Tránh gọi AI nhiều lần cùng lúc
         if (isAIPlaying || isGameEnded) {
@@ -162,7 +171,9 @@ public class BoardController {
         }
         // Đánh dấu AI đang xử lý
         isAIPlaying = true;
+        
         new SwingWorker<int[], Void>() {
+        	
         	/**
         	 * UC-003.1.1: AI suy nghĩ ở luồng nền.
         	 * Hệ thống:
@@ -184,38 +195,99 @@ public class BoardController {
                 // Tìm nước đi tốt nhất
                 return ai.getNextMove(board);
             }
+            
+            /**
+            * UC-003.1.3 đến UC-003.1.7
+            **/
             @Override
             protected void done() {
                 try {
+                	// Nếu game đã kết thúc trong lúc AI đang suy nghĩ thì bỏ qua
+                    if (isGameEnded) {
+                        isAIPlaying = false;
+                        return;
+                    }
+                    
+                    // Lấy nước đi AI tìm được
                     int[] move = get();
-                    if (move == null) return;
-
+                    if (move == null) { 
+                    	// Không còn nước đi -> kiểm tra hòa
+                        if (board.isBoardFull() && !isGameEnded) {
+                            isGameEnded = true;
+                            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                        }
+                        isAIPlaying = false;
+                        return;
+                    }
+                 
+                    /**
+                     * UC-003.1.3: Hệ thống đặt quân AI vào vị trí đã được tính toán.
+                     * - Cập nhật Model.
+                     * - Cập nhật giao diện.
+                     */
+                    // Đánh nước đi của AI
                     int player = board.makeMove(move[0], move[1]);
 
                     // ── ghi lịch sử (AI) ──────────────
                     recordMove(move[0], move[1], player);
+                    // Cập nhật giao diện
                     view.updateBoard(board);
-                    view.setInputEnabled(true);
 
+                    /**
+                     * UC-003.1.5: Kiểm tra điều kiện thắng.
+                     * Nếu AI tạo được: - 3 quân liên tiếp (3x3) hoặc - 4 quân liên tiếp (5x5) => Chuyển sang UC-004.
+                     */
+                	// Kiểm tra AI thắng chưa
                     int[][] winLine = board.getWinLine(move[0], move[1], player);
                     if (winLine != null) {
+                    	isGameEnded = true;
+                    	// Tô sáng đường thắng
                         view.highlightWin(winLine, false);
-
+                        
                         // Luồng tính toán của Máy thắng -> Thông báo Máy thắng
-                        // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
-                        notifyGameEnd(move[0], move[1], player, false);
+                        SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                        isAIPlaying = false;
                         return;
                     }
 
+                    /**
+                     * UC-003.1.6: Kiểm tra điều kiện hòa.
+                     * Nếu:
+                     * - Bàn cờ đầy.
+                     * - Không có người thắng.
+                     * => Chuyển sang UC-004.
+                     */
+                    // Kiểm tra hòa	
                     if (board.isBoardFull()) {
-                        // SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
-                        notifyGameEnd(move[0], move[1], player, false);
+                    	isGameEnded = true;
+                        SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                        isAIPlaying = false;
                         return;
                     }
+                    
+                    /**
+                     * UC-003.1.4: Mở khóa input người chơi.
+                     * Chỉ cho phép đánh
+                     * vào các ô còn trống.
+                     *
+                     * UC-003.1.7: Chuyển lượt về người chơi.
+                     * Hiển thị: "Lượt của: [Tên người chơi]"
+                     * Tiếp tục UC-002.
+                     */
+                    if (!isGameEnded) {
+                    	// Mở khóa bàn cờ cho người chơi
+                        view.setInputEnabled(true);
+                    }
+                    // ==========================================
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    view.setInputEnabled(true);
+                    // Nếu có lỗi, vẫn mở khóa bàn cờ để người chơi có thể tiếp tục
+                    if (!isGameEnded) {
+                        view.setInputEnabled(true);
+                    }
+                } finally {
+                    isAIPlaying = false;
                 }
             }
         }.execute();
