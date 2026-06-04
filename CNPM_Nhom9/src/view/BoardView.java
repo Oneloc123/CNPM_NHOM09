@@ -2,6 +2,7 @@ package view;
 
 import controller.BoardController;
 import model.Board;
+import model.MoveRecord;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -21,6 +22,9 @@ public class BoardView extends JFrame {
     private String oPlayerName;
     private int size; // Lưu kích thước hiển thị bàn cờ
 
+    // ── Panel lịch sử nước đi
+    private MoveHistoryPanel historyPanel;
+
     /*
     UC1.1.6.2: Hệ thống khởi tạo giao diện bàn cờ tự động co giãn lưới ô
      */
@@ -37,9 +41,9 @@ public class BoardView extends JFrame {
 
         // Thay đổi size cửa sổ Windows cho tương thích diện tích lưới nút bấm
         if (size == 3) {
-            setSize(480, 550);
+            setSize(880, 550);
         } else {
-            setSize(620, 700); 
+            setSize(1020, 700);
         }
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -51,6 +55,10 @@ public class BoardView extends JFrame {
 
         JPanel boardPanel = createBoardPanel();
         add(boardPanel, BorderLayout.CENTER);
+
+        // ── Panel lịch sử (phải) ──────────────────────────────────
+        historyPanel = new MoveHistoryPanel(xPlayerName, oPlayerName);
+        add(historyPanel, BorderLayout.EAST);
     }
 
     public void setController(BoardController controller) {
@@ -308,5 +316,12 @@ public class BoardView extends JFrame {
             btn.setContentAreaFilled(true);
             btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
         }
+    }
+
+    /**
+     * Gọi từ Controller để thêm nước đi mới vào panel lịch sử.
+     */
+    public void addMoveRecord(MoveRecord rec) {
+        historyPanel.addMove(rec);
     }
 }

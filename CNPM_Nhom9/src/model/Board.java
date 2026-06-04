@@ -21,6 +21,11 @@ public class Board {
 		this.moveCount = 0;
 	}
 
+	/** Trả về điều kiện thắng (số quân liên tiếp cần thiết). */
+	public int getWinCondition() {
+		return winCondition;
+	}
+
 	public int getSize() {
 		return size;
 	}
