@@ -25,6 +25,17 @@ public class Board {
 	public int getWinCondition() {
 		return winCondition;
 	}
+	/**
+	 * Trả về bản sao chỉ đọc của ma trận bàn cờ tại thời điểm hiện tại.
+	 * Dùng để tính điểm mà không làm thay đổi trạng thái nội tại.
+	 */
+	public synchronized int[][] getMatrixCopy() {
+		int[][] copy = new int[size][size];
+		for (int i = 0; i < size; i++) {
+			System.arraycopy(matrix[i], 0, copy[i], 0, size);
+		}
+		return copy;
+	}
 
 	public int getSize() {
 		return size;
@@ -47,8 +58,6 @@ public class Board {
         //        0	        Nước đi không hợp lệ
         //        1	        Người chơi X
         //        2	        Người chơi O
-
-
 		if (row < 0 || row >= size || col < 0 || col >= size || matrix[row][col] != 0) {
             // UC 2.2.1 nước đi không hợp lệ như các trường hợp đã nêu trên trả về giá trị 0
 			return 0;

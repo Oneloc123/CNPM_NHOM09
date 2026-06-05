@@ -79,14 +79,11 @@ public class BoardView extends JFrame {
         panel.setBackground(new Color(45, 45, 45));
 
         buttons = new JButton[size][size];
-
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 JButton btn = createGameButton();
                 final int row = i, col = j;
-
                 btn.addActionListener(e -> onCellClicked(row, col));
-
                 buttons[i][j] = btn;
                 panel.add(btn);
             }
@@ -109,9 +106,7 @@ public class BoardView extends JFrame {
 //    Người chơi nhấn chuột vào một ô trên bàn cờ.
 //
 //    UC 2.1.2 Hệ thống nhận sự kiện từ giao diện
-//
 //    Mô tả:
-//
 //    Nhận tọa độ hàng (row) và cột (col) của ô được chọn.
 //    Kiểm tra ván đấu đã kết thúc hay chưa.
 //    Nếu chưa kết thúc, chuyển yêu cầu sang Controller xử lý.
