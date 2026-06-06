@@ -41,6 +41,10 @@ public class ResultView extends JFrame {
     private static final Color COLOR_ROW_EVEN = new Color(40, 46, 58);    // Màu hàng chẵn bảng XH
     private static final Color COLOR_HEADER   = new Color(18, 22, 32);    // Màu header bảng XH
 
+    /**
+     * 5.1.5: Tạo màn hình kết quả với đầy đủ thông tin ván đấu và 3 nút điều hướng.
+     *        topEntries được truyền từ ResultController (đã truy vấn ở bước 5.1.4).
+     */
     public ResultView(String resultMessage, int moveCount, List<Entry> topEntries) {
 
         this.topEntries = topEntries;
@@ -55,7 +59,7 @@ public class ResultView extends JFrame {
         mainPanel.setBackground(new Color(24, 28, 36));
         mainPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // Nội dung kết quả (Center)
+        // 5.1.5: Nội dung kết quả (Center) — hiển thị resultMessage và moveCount.
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -67,7 +71,7 @@ public class ResultView extends JFrame {
 
         JLabel lblResult = new JLabel(resultMessage);
         lblResult.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        // Đổi màu chữ động theo kết quả trận đấu
+        // 5.1.5: Đổi màu chữ động theo kết quả trận đấu
         if (resultMessage.contains("thắng")) {
             if (resultMessage.contains("Máy")) {
                 lblResult.setForeground(new Color(225, 55, 75)); // Đỏ nếu máy thắng
@@ -90,7 +94,7 @@ public class ResultView extends JFrame {
         contentPanel.add(Box.createVerticalStrut(15));
         contentPanel.add(lblMoves);
 
-        // Nút bấm điều hướng (South)
+        // 5.1.5: Ba nút điều hướng (South) — Chơi lại, BXH, Trang chủ.
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         buttonPanel.setOpaque(false);
 
@@ -109,16 +113,19 @@ public class ResultView extends JFrame {
     }
 
     public void setController(ResultController controller) {
+        // AF-02 / 5.3.3: Chơi lại
         this.controller = controller;
         btnRestart.addActionListener(e -> controller.handleRestart());
+        // AF-02 / 5.3.4: Trang chủ
         btnHome.addActionListener(e -> controller.handleGoHome());
+        // 5.1.6: Người chơi nhấn nút BXH → mở cửa sổ bảng xếp hạng (5.1.7 - 5.1.8).
         btnLeaderboard.addActionListener(e -> showLeaderboardDialog());
     }
 
     // ─── Phương thức tạo UI nội bộ ─────────────────────────────
 
     /**
-     * 5.1.3: Hiển thị kết quả, số nước đi và màu chữ theo trạng thái thắng/thua/hòa.
+     * 5.1.5: Hiển thị kết quả, số nước đi và màu chữ theo trạng thái thắng/thua/hòa.
      */
     private JPanel buildResultPanel(String resultMessage, int moveCount) {
         JPanel panel = new JPanel();
@@ -151,7 +158,7 @@ public class ResultView extends JFrame {
     }
 
     /**
-     * 5.1.5, AF-4: Dựng nội dung bảng Top 5 hoặc thông báo chưa có dữ liệu.
+     * 5.1.8 / AF-04 / 5.5.2: Dựng nội dung bảng Top 5 hoặc thông báo chưa có dữ liệu.
      */
     private JPanel buildLeaderboardPanel(List<Entry> topEntries) {
         JPanel wrapper = new JPanel(new BorderLayout(0, 6));
@@ -165,7 +172,7 @@ public class ResultView extends JFrame {
         wrapper.add(lblLbTitle, BorderLayout.NORTH);
 
         if (topEntries.isEmpty()) {
-            // AF-4 / 5.5.2: Không dựng bảng 7 cột khi danh sách rỗng.
+        	// AF-04 / 5.5.2: Không dựng bảng 7 cột khi danh sách rỗng — hiển thị dòng thông báo.
             JLabel lblEmpty = new JLabel("Chưa có dữ liệu xếp hạng.");
             lblEmpty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
             lblEmpty.setForeground(COLOR_SUBTEXT);
@@ -174,7 +181,7 @@ public class ResultView extends JFrame {
             return wrapper;
         }
 
-        // 5.1.5: Bảng gồm 7 cột: Hạng, Tên, Độ khó, Bàn, Thắng, Thua, Hòa.
+        // 5.1.8: Bảng gồm 7 cột: Hạng, Tên, Độ khó, Bàn, Thắng, Thua, Hòa.
         JPanel table = new JPanel(new GridLayout(topEntries.size() + 1, 7, 1, 1));
         table.setBackground(new Color(10, 12, 18)); // Màu viền giữa các ô
 
@@ -186,6 +193,7 @@ public class ResultView extends JFrame {
         for (int i = 0; i < topEntries.size(); i++) {
             Entry e         = topEntries.get(i);
             Color rowBg     = (i % 2 == 0) ? COLOR_ROW_EVEN : COLOR_ROW_ODD;
+            // 5.1.8: Biểu tượng huy chương cho ba vị trí đầu.
             String rank     = (i == 0) ? "🥇" : (i == 1) ? "🥈" : (i == 2) ? "🥉" : String.valueOf(i + 1);
 
             table.add(makeCell(rank,              rowBg, COLOR_ACCENT,             Font.PLAIN, 12));
@@ -211,7 +219,7 @@ public class ResultView extends JFrame {
     }
     
     /**
-     * 5.1.3: Tạo bộ ba nút Chơi lại, BXH và Trang chủ.
+     * 5.1.5: Tạo bộ ba nút Chơi lại, BXH và Trang chủ.
      */
     private JPanel buildButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
@@ -229,7 +237,7 @@ public class ResultView extends JFrame {
 
     // ─── Phương thức tiện ích ──────────────────────────────────
 
-    /** 5.1.5: Tạo một ô trong bảng xếp hạng. */
+    /** 5.1.8: Tạo một ô trong bảng xếp hạng. */
     private JLabel makeCell(String text, Color bg, Color fg, int fontStyle, int fontSize) {
         JLabel lbl = new JLabel(text, SwingConstants.CENTER);
         lbl.setFont(new Font("Segoe UI", fontStyle, fontSize));
@@ -240,10 +248,15 @@ public class ResultView extends JFrame {
         return lbl;
     }
 
-    /** 5.1.5 - 5.1.6: Mở JDialog bảng xếp hạng và cho phép đóng để quay lại kết quả. */
-    private void showLeaderboardDialog() {
+    /**
+     * 5.1.7 - 5.1.9: Mở JDialog bảng xếp hạng (bước 5.1.7),
+     *                 hiển thị Top 5 hoặc thông báo rỗng (bước 5.1.8),
+     *                 cho phép đóng để quay lại ResultView (bước 5.1.9).
+     */    
+        private void showLeaderboardDialog() {
+        // 5.1.7: Mở cửa sổ bảng xếp hạng phía trên màn hình kết quả.
         JDialog dialog = new JDialog(this, "Bảng Xếp Hạng", true);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 5.1.9: Đóng → quay về ResultView
         dialog.setSize(520, 330);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
@@ -251,6 +264,7 @@ public class ResultView extends JFrame {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(COLOR_BG);
         content.setBorder(new EmptyBorder(18, 18, 18, 18));
+        // 5.1.8: Hiển thị danh sách tối đa 5 bản ghi với đầy đủ 7 thông tin.
         content.add(buildLeaderboardPanel(topEntries), BorderLayout.CENTER);
 
         dialog.setContentPane(content);
