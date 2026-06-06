@@ -59,7 +59,7 @@ public class ResultController {
         boardView.dispose();
 
         // Tạo ván mới với đúng cấu hình cũ nhận được từ game nguồn
-        view.BoardView newView = new view.BoardView(difficulty, playerName, isPlayerFirst, size);
+        BoardView newView = new view.BoardView(difficulty, playerName, isPlayerFirst, size);
         BoardController newCtrl = new BoardController(difficulty, playerName, isPlayerFirst, size);
         
         newCtrl.setView(newView);
