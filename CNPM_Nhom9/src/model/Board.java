@@ -25,6 +25,17 @@ public class Board {
 	public int getWinCondition() {
 		return winCondition;
 	}
+	/**
+	 * Trả về bản sao chỉ đọc của ma trận bàn cờ tại thời điểm hiện tại.
+	 * Dùng để tính điểm mà không làm thay đổi trạng thái nội tại.
+	 */
+	public synchronized int[][] getMatrixCopy() {
+		int[][] copy = new int[size][size];
+		for (int i = 0; i < size; i++) {
+			System.arraycopy(matrix[i], 0, copy[i], 0, size);
+		}
+		return copy;
+	}
 
 	public int getSize() {
 		return size;
@@ -47,8 +58,6 @@ public class Board {
         //        0	        Nước đi không hợp lệ
         //        1	        Người chơi X
         //        2	        Người chơi O
-
-
 		if (row < 0 || row >= size || col < 0 || col >= size || matrix[row][col] != 0) {
             // UC 2.2.1 nước đi không hợp lệ như các trường hợp đã nêu trên trả về giá trị 0
 			return 0;
@@ -68,10 +77,23 @@ public class Board {
 		return player;
 	}
 
+	// =============== NÂNG CẤP ===============   
+	/**
+     * UC3.1 - Hoàn tác nước đi
+     * Chức năng:
+     * - Xóa quân cờ tại vị trí chỉ định
+     * - Trả lại lượt cho người vừa đánh
+     * Ứng dụng:
+     * - Được sử dụng trong giải thuật Minimax của AI
+     * - Cho phép AI thử các nước đi mà không làm thay đổi vĩnh viễn bàn cờ
+     * @param row Hàng cần hoàn tác
+     * @param col Cột cần hoàn tác
+     */
 	public synchronized void undoMove(int row, int col) {
+		// Xóa quân cờ tại vị trí (trả về 0 - ô trống)
 		matrix[row][col] = 0;
+		// Trả lại lượt cho người vừa đánh (đảo ngược isXTurn)
 		isXTurn = !isXTurn;
-		this.moveCount--;
 	}
 
 	public int[][] getWinLine(int row, int col, int player) {
