@@ -1,5 +1,7 @@
 package aiService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import model.Board;
 
@@ -73,7 +75,7 @@ public class AIService {
 		}
 	}
 
-// =============== NÂNG CẤP 1: CHẾ ĐỘ DỄ===============
+// =============== NÂNG CẤP 1: CHẾ ĐỘ DỄ ===============
 	/**
 	 * AF-01 - Chế độ Dễ (Random thông minh)
 	 * Thực hiện:
@@ -438,4 +440,91 @@ public class AIService {
     private boolean isValid(int row, int col, int size) {
         return row >= 0 && row < size && col >= 0 && col < size;
     }
+// =============== NÂNG CẤP 4: SẮP XẾP NƯỚC ĐI THEO HEURISTIC ===============
+    /**
+     * UC-003.3.3 - Sắp xếp nước đi theo heuristic
+     * Tiêu chí:
+     * - Gần trung tâm bàn cờ.
+     * - Gần các quân đã đánh.
+     * Mục đích: Đưa các nước đi tiềm năng lên đầu danh sách.
+     * Lợi ích:
+     * Alpha-Beta Pruning cắt tỉa hiệu quả hơn.
+     */
+    private List<int[]> orderMovesByHeuristic(Board board) {
+        int size = board.getSize();
+        
+        // Danh sách lưu các nước đi kèm điểm heuristic
+        List<MoveScore> moveScores = new ArrayList<>();
+        
+        // Xác định vị trí trung tâm bàn cờ
+        int center = size / 2;
+        
+        // Tính heuristic cho từng ô trống
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+            	// Chỉ xét những ô chưa được đánh
+                if (board.getCell(i, j) == 0) {
+                    int heuristic = 0;	// Điểm heuristic ban đầu
+                    
+                    // Ưu tiên tâm bàn cờ
+                    if (i == center && j == center) {
+                        heuristic += 100;
+                    } 
+                    // Ô nằm gần trung tâm
+                    else if (Math.abs(i - center) <= 1 && Math.abs(j - center) <= 1) {
+                        heuristic += 50;
+                    }
+                    
+                    // Ưu tiên ô gần các quân đã đánh
+                    for (int di = -2; di <= 2; di++) {
+                        for (int dj = -2; dj <= 2; dj++) {
+                            int ni = i + di;
+                            int nj = j + dj;
+                            // Nếu ô lân cận hợp lệ và đã có quân cờ
+                            if (isValid(ni, nj, size) && board.getCell(ni, nj) != 0) {
+                                heuristic += 5;	// Mỗi quân lân cận +5 điểm
+                            }
+                        }
+                    }
+                    
+                    moveScores.add(new MoveScore(new int[]{i, j}, heuristic));
+                }
+            }
+        }
+        
+        // Sắp xếp giảm dần theo heuristic
+        moveScores.sort((a, b) -> b.score - a.score);
+        
+        // Chuyển đổi về danh sách các nước đi
+        List<int[]> orderedMoves = new ArrayList<>();
+        for (MoveScore ms : moveScores) {
+            orderedMoves.add(ms.move);
+        }
+        return orderedMoves;
+    }
+    
+// ==================== LỚP TRỢ GIÚP ====================
+    /**
+     * Lớp hỗ trợ lưu trữ:
+     * - move  : tọa độ nước đi
+     * - score : điểm heuristic
+     * Được sử dụng tại bước 3.3.3
+     * để sắp xếp danh sách nước đi.
+     */
+    private class MoveScore {
+        int[] move;	// Nước đi [hàng, cột]
+        int score;	// Điểm heuristic của nước đi
+        
+        /**
+         * Khởi tạo một đối tượng MoveScore
+         * @param move  Nước đi [hàng, cột]
+         * @param score Điểm heuristic tương ứng
+         */
+        MoveScore(int[] move, int score) {
+            this.move = move;
+            this.score = score;
+        }
+    }
+}
+	
 }
