@@ -27,6 +27,11 @@ public class BoardController {
     private int totalScoreX = 0;
     private int totalScoreO = 0;
 
+    // Cờ để tránh AI gọi nhiều lần khi người chơi click nhanh
+    private volatile boolean isAIPlaying = false;
+    // Cờ đánh dấu game đã kết thúc (có người thắng hoặc hòa)
+    private volatile boolean isGameEnded = false;
+
     /*
     UC1.1.6.3: Hệ thống khởi tạo Controller cho bàn cờ
      */
@@ -155,7 +160,7 @@ public class BoardController {
         SwingUtilities.invokeLater(() -> view.addMoveRecord(rec));
     }
 
-/**
+    /**
      * UC-003.1.0: Hệ thống tự động kích hoạt lượt AI sau khi người chơi hoàn thành nước đi hợp lệ.
      * Kiểm tra:
      * - AI có đang chạy hay không.
@@ -171,9 +176,9 @@ public class BoardController {
         }
         // Đánh dấu AI đang xử lý
         isAIPlaying = true;
-
+        
         new SwingWorker<int[], Void>() {
-
+        	
         	/**
         	 * UC-003.1.1: AI suy nghĩ ở luồng nền.
         	 * Hệ thống:
@@ -195,37 +200,37 @@ public class BoardController {
                 // Tìm nước đi tốt nhất
                 return ai.getNextMove(board);
             }
-
+            
             /**
-            * UC-003.1.3 đến UC-003.1.7
-            **/
-            @Override
-            protected void done() {
-                try {
-                	// Nếu game đã kết thúc trong lúc AI đang suy nghĩ thì bỏ qua
-                    if (isGameEnded) {
-                        isAIPlaying = false;
-                        return;
-                    }
-
-                    // Lấy nước đi AI tìm được
-                    int[] move = get();
-                    if (move == null) {
-                    	// Không còn nước đi -> kiểm tra hòa
-                        if (board.isBoardFull() && !isGameEnded) {
-                            isGameEnded = true;
-                            SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
-                        }
-                        isAIPlaying = false;
-                        return;
-                    }
-
+             * UC-003.1.3 đến UC-003.1.7
+             **/
+             @Override
+             protected void done() {
+                 try {
+                 	// Nếu game đã kết thúc trong lúc AI đang suy nghĩ thì bỏ qua
+                     if (isGameEnded) {
+                         isAIPlaying = false;
+                         return;
+                     }
+                     
+                     // Lấy nước đi AI tìm được
+                     int[] move = get();
+                     if (move == null) { 
+                     	// Không còn nước đi -> kiểm tra hòa
+                         if (board.isBoardFull() && !isGameEnded) {
+                             isGameEnded = true;
+                             notifyGameEnd(-1, -1, 0, false);
+                         }
+                         isAIPlaying = false;
+                         return;
+                     }
+                  
                     /**
                      * UC-003.1.3: Hệ thống đặt quân AI vào vị trí đã được tính toán.
                      * - Cập nhật Model.
                      * - Cập nhật giao diện.
                      */
-                    // Đánh nước đi của AI
+                    // Đánh nước đi của AI TRƯỚC để có player và snapshot đúng
                     int player = board.makeMove(move[0], move[1]);
 
                     // ── Tính điểm và ghi lịch sử (AI) ──────────────
@@ -242,10 +247,11 @@ public class BoardController {
                     if (winLine != null) {
                     	isGameEnded = true;
                     	// Tô sáng đường thắng
-                        view.highlightWin(winLine, false);
-
+//                        view.highlightWin(winLine, false);
+                        
                         // Luồng tính toán của Máy thắng -> Thông báo Máy thắng
-                        SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                     // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                        notifyGameEnd(move[0], move[1], player, false);
                         isAIPlaying = false;
                         return;
                     }
@@ -257,14 +263,15 @@ public class BoardController {
                      * - Không có người thắng.
                      * => Chuyển sang UC-004.
                      */
-                    // Kiểm tra hòa
+                    // Kiểm tra hòa	
                     if (board.isBoardFull()) {
                     	isGameEnded = true;
-                        SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                    	// SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                        notifyGameEnd(move[0], move[1], player, false);
                         isAIPlaying = false;
                         return;
                     }
-
+                    
                     /**
                      * UC-003.1.4: Mở khóa input người chơi.
                      * Chỉ cho phép đánh
