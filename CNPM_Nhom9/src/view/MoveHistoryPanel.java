@@ -11,7 +11,6 @@ import java.util.List;
 
 /**
  * Panel hiển thị danh sách nước đi kèm điểm số.
- *
  */
 public class MoveHistoryPanel extends JPanel {
 
@@ -26,6 +25,7 @@ public class MoveHistoryPanel extends JPanel {
     private static final Color COLOR_O      = new Color(80, 170, 255);
     private static final Color COLOR_GOLD   = new Color(255, 210, 60);
     private static final Color COLOR_TEXT   = new Color(220, 220, 235);
+    private static final Color COLOR_DIM    = new Color(140, 140, 165);
     private static final Color COLOR_BORDER = new Color(60, 60, 90);
 
     // ── Dữ liệu ──────────────────────────────────────────────────────
@@ -36,19 +36,24 @@ public class MoveHistoryPanel extends JPanel {
     // ── Widgets ──────────────────────────────────────────────────────
     private final DefaultTableModel tableModel;
     private final JTable table;
-
+    private final JLabel lblScoreX;
+    private final JLabel lblScoreO;
 
     private static final String[] COLUMNS =
-            { "#", "Người", "Toạ độ" };
+            { "#", "Người", "Toạ độ", "Điểm", "Hàng tạo ra" };
+
     // ─────────────────────────────────────────────────────────────────
     public MoveHistoryPanel(String nameX, String nameO) {
         this.nameX = nameX;
         this.nameO = nameO;
+
         setLayout(new BorderLayout(0, 0));
         setBackground(BG_DARK);
         setPreferredSize(new Dimension(320, 0));   // chiều rộng cố định, cao co giãn
+
         // ── Header ────────────────────────────────────────────────
         add(buildHeader(), BorderLayout.NORTH);
+
         // ── Table ─────────────────────────────────────────────────
         tableModel = new DefaultTableModel(COLUMNS, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -60,27 +65,46 @@ public class MoveHistoryPanel extends JPanel {
         scroll.setBackground(BG_DARK);
         add(scroll, BorderLayout.CENTER);
 
+        // ── Footer tổng điểm ──────────────────────────────────────
+        JPanel footer = buildFooter();
+        lblScoreX = (JLabel) ((JPanel) footer.getComponent(0)).getComponent(1);
+        lblScoreO = (JLabel) ((JPanel) footer.getComponent(1)).getComponent(1);
+        add(footer, BorderLayout.SOUTH);
     }
+
     // ── Public API ───────────────────────────────────────────────────
+
     /** Thêm một nước đi mới vào danh sách và cập nhật giao diện. */
     public void addMove(MoveRecord rec) {
         records.add(rec);
+
         tableModel.addRow(new Object[]{
                 rec.getMoveNumber(),
                 rec.getPlayerSymbol(),
-                rec.getCoordDisplay()
+                rec.getCoordDisplay(),
+                rec.getMoveScore(),
+                rec.getDescription()
         });
+
         // Cuộn xuống dòng mới nhất
         int last = tableModel.getRowCount() - 1;
         table.scrollRectToVisible(table.getCellRect(last, 0, true));
 
+        // Cập nhật tổng điểm
+        lblScoreX.setText(String.valueOf(rec.getTotalScoreX()));
+        lblScoreO.setText(String.valueOf(rec.getTotalScoreO()));
     }
+
     /** Xóa toàn bộ lịch sử (dùng khi chơi lại). */
     public void reset() {
         records.clear();
         tableModel.setRowCount(0);
+        lblScoreX.setText("0");
+        lblScoreO.setText("0");
     }
+
     // ── Builders ─────────────────────────────────────────────────────
+
     private JPanel buildHeader() {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(BG_HEADER);
@@ -158,7 +182,67 @@ public class MoveHistoryPanel extends JPanel {
                 return this;
             }
         };
+
+        // Cột điểm tô vàng nếu cao
+        TableCellRenderer scoreRenderer = new DefaultTableCellRenderer() {
+            {setHorizontalAlignment(SwingConstants.CENTER);}
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable tbl, Object val, boolean sel, boolean focus, int r, int c) {
+                super.getTableCellRendererComponent(tbl, val, sel, focus, r, c);
+                int score = val == null ? 0 : (int) val;
+                setForeground(score >= 50 ? COLOR_GOLD : score >= 10 ? new Color(150, 230, 150) : COLOR_DIM);
+                setFont(loadFont(score >= 50 ? Font.BOLD : Font.PLAIN, 13f));
+                return this;
+            }
+        };
+
+        // Áp renderer vào từng cột
+        int[] colWidths = {30, 55, 65, 50, 130};
+        for (int i = 0; i < COLUMNS.length; i++) {
+            TableColumn col = t.getColumnModel().getColumn(i);
+            col.setPreferredWidth(colWidths[i]);
+            if (i == 0 || i == 2) col.setCellRenderer(center);
+            else if (i == 1)      col.setCellRenderer(playerRenderer);
+            else if (i == 3)      col.setCellRenderer(scoreRenderer);
+            else                  col.setCellRenderer(left);
+        }
+
         return t;
+    }
+
+    private JPanel buildFooter() {
+        JPanel footer = new JPanel(new GridLayout(2, 1, 0, 0));
+        footer.setBackground(BG_HEADER);
+        footer.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(2, 0, 0, 0, COLOR_BORDER),
+                new EmptyBorder(8, 14, 10, 14)
+        ));
+
+        footer.add(scoreRow("X  " + nameX + ":", "0", COLOR_X));
+        footer.add(scoreRow("O  " + nameO + ":", "0", COLOR_O));
+
+        return footer;
+    }
+
+    /** Tạo một hàng hiển thị nhãn + giá trị điểm. */
+    private JPanel scoreRow(String label, String initialVal, Color valColor) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setBackground(BG_HEADER);
+        row.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(loadFont(Font.BOLD, 13f));
+        lbl.setForeground(COLOR_DIM);
+
+        JLabel val = new JLabel(initialVal);
+        val.setFont(loadFont(Font.BOLD, 16f));
+        val.setForeground(valColor);
+        val.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        row.add(lbl, BorderLayout.WEST);
+        row.add(val, BorderLayout.EAST);
+        return row;
     }
 
     private Font loadFont(int style, float size) {
