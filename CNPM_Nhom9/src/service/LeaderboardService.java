@@ -76,7 +76,8 @@ public class LeaderboardService {
         }
 
         /**
-         * 5.1.2: Tổng số ván dùng làm tiêu chí phụ khi sắp xếp BXH.
+         * 5.1.4: Tổng số ván dùng làm tiêu chí phụ khi sắp xếp BXH
+         *        (phân biệt người cùng wins → ai nhiều totalGames hơn đứng trên).
          */
         public int totalGames() {
             return wins + losses + draws;
@@ -93,7 +94,11 @@ public class LeaderboardService {
     // ─── API công khai ─────────────────────────────────────────
 
     /**
-     * 5.1.1, AF-3: Ghi nhận và cộng dồn kết quả vào leaderboard.json.
+     * 5.1.1 - 5.1.3, AF-03: Ghi nhận và cộng dồn kết quả vào leaderboard.json.
+     *
+     * Bước 5.1.1: Tìm/tạo bản ghi theo tổ hợp (playerName + difficulty + boardSize).
+     * Bước 5.1.2: Xác định loại kết quả và cộng dồn chỉ số tương ứng.
+     * Bước 5.1.3: Lưu lại toàn bộ danh sách xuống file sau khi cập nhật.
      *
      * @param playerName    Tên người chơi (lấy từ GameView)
      * @param difficulty    Độ khó: "Dễ" hoặc "Khó"
@@ -107,6 +112,7 @@ public class LeaderboardService {
             List<Entry> entries = loadAll();
 
             // 5.1.1: Tìm bản ghi theo tổ hợp Tên + Độ khó + Cỡ bàn cờ.
+            //        Nếu chưa tồn tại (lần đầu tiên / file mới) thì tạo mới (AF-01: 5.2.2 - 5.2.3).
             Entry target = null;
             for (Entry e : entries) {
                 if (e.key().equals(playerName + "|" + difficulty + "|" + boardSize)) {
@@ -116,11 +122,12 @@ public class LeaderboardService {
             }
 
             if (target == null) {
+                // AF-01 / 5.2.3: Bản ghi của người chơi được tạo mới với số liệu ban đầu bằng 0.
                 target = new Entry(playerName, difficulty, boardSize);
                 entries.add(target);
             }
 
-            // 5.1.1: Cộng dồn Thua / Hòa / Thắng theo chuỗi kết quả.
+            // 5.1.2: Cộng dồn Thua / Hòa / Thắng theo chuỗi kết quả.
             if (resultMessage.contains("Máy thắng")) {
                 target.losses++;
             } else if (resultMessage.contains("Hòa")) {
@@ -129,21 +136,25 @@ public class LeaderboardService {
                 target.wins++;
             }
 
+            // 5.1.3: Lưu lại toàn bộ dữ liệu BXH sau khi đã cập nhật.
+            //        AF-01 / 5.2.4: Tạo mới file nếu chưa tồn tại.
             saveAll(entries);
 
         } catch (IOException ex) {
-            // AF-3 / 5.4.2 - 5.4.3: Ghi lỗi ra console, không làm sập ứng dụng.
+            // AF-03 / 5.4.2: Ghi lỗi ra console, không làm sập ứng dụng.
             System.err.println("[LeaderboardService] Không thể ghi leaderboard: " + ex.getMessage());
         }
     }
 
     /**
-     * 5.1.2, AF-3: Lấy Top 5, sắp xếp theo thắng giảm dần rồi tổng ván giảm dần.
+     * 5.1.4, AF-03: Truy vấn Top 5, sắp xếp theo wins giảm dần rồi totalGames giảm dần.
+     *               Nếu lỗi I/O, trả danh sách rỗng để ResultView vẫn hiển thị được (→ AF-04).
      */
     public static List<Entry> getTopEntries() {
         try {
             List<Entry> entries = loadAll();
 
+            // 5.1.4: Sắp xếp: wins giảm dần → totalGames giảm dần (tiêu chí phụ).
             entries.sort((a, b) -> {
                 if (b.wins != a.wins) return b.wins - a.wins;
                 return b.totalGames() - a.totalGames();
@@ -152,7 +163,7 @@ public class LeaderboardService {
             return entries.subList(0, Math.min(TOP_N, entries.size()));
 
         } catch (IOException ex) {
-            // AF-3 / 5.4.2 - 5.4.3: Trả danh sách rỗng để ResultView vẫn hiển thị được.
+            // AF-03 / 5.4.4: Lỗi đọc → coi như BXH rỗng → chuyển sang AF-04.
             System.err.println("[LeaderboardService] Không thể đọc leaderboard: " + ex.getMessage());
             return Collections.emptyList();
         }
@@ -161,12 +172,14 @@ public class LeaderboardService {
     // ─── Phương thức nội bộ (I/O & JSON thủ công) ─────────────
 
     /**
-     * 5.1.1 - 5.1.2: Đọc toàn bộ bản ghi; file chưa tồn tại thì xem như rỗng.
+     * 5.1.1 / AF-01 / 5.2.1 - 5.2.2: Đọc toàn bộ bản ghi;
+     * file chưa tồn tại (lần chạy đầu tiên) thì xem như danh sách rỗng.
      */
     private static List<Entry> loadAll() throws IOException {
         Path path = getFilePath();
         if (!Files.exists(path)) {
-            return new ArrayList<>();  // File chưa tồn tại = chưa có dữ liệu
+            // AF-01 / 5.2.1 - 5.2.2: File chưa tồn tại → khởi tạo danh sách trống.
+            return new ArrayList<>();
         }
 
         String json = new String(Files.readAllBytes(path), StandardCharsets.UTF_8).trim();
@@ -180,7 +193,8 @@ public class LeaderboardService {
     }
 
     /**
-     * 5.1.1: Ghi lại leaderboard.json sau khi cộng dồn kết quả.
+     * 5.1.3 / AF-01 / 5.2.4: Ghi lại leaderboard.json sau khi cộng dồn kết quả.
+     * Tạo mới file nếu chưa tồn tại.
      */
     private static void saveAll(List<Entry> entries) throws IOException {
         Path path = getFilePath();
@@ -190,7 +204,8 @@ public class LeaderboardService {
     }
 
     /**
-     * UC-005: File leaderboard.json nằm trong thư mục chạy ứng dụng.
+     * UC-005: File leaderboard.json nằm trong thư mục chạy ứng dụng (user.dir),
+     * tương thích cả môi trường IDE lẫn file .jar.
      */
     private static Path getFilePath() {
         return Paths.get(System.getProperty("user.dir"), FILE_NAME);
@@ -199,7 +214,7 @@ public class LeaderboardService {
     // ─── JSON thủ công (không dùng thư viện ngoài) ─────────────
 
     /**
-     * 5.1.1 - 5.1.2: Parse JSON cục bộ theo đúng cấu trúc leaderboard.json.
+     * 5.1.1 / 5.1.4: Parse JSON cục bộ theo đúng cấu trúc leaderboard.json.
      */
     private static List<Entry> parseJsonArray(String json) {
         List<Entry> result = new ArrayList<>();
@@ -220,7 +235,7 @@ public class LeaderboardService {
     }
 
     /**
-     * 5.1.1 - 5.1.2: Tách từng object JSON trong mảng leaderboard.
+     * 5.1.1 / 5.1.4: Tách từng object JSON trong mảng leaderboard.
      */
     private static List<String> splitObjects(String s) {
         List<String> list  = new ArrayList<>();
@@ -244,7 +259,8 @@ public class LeaderboardService {
     }
 
     /**
-     * 5.1.1 - 5.1.2, AF-3: Chuyển một object JSON thành Entry, bỏ qua bản ghi lỗi.
+     * 5.1.1 / 5.1.4 / AF-03: Chuyển một object JSON thành Entry,
+     * bỏ qua bản ghi lỗi (không crash ứng dụng).
      */
     private static Entry parseObject(String obj) {
         try {
@@ -266,7 +282,7 @@ public class LeaderboardService {
         }
     }
 
-    /** 5.1.1 - 5.1.2: Trích xuất giá trị chuỗi từ JSON object. */
+    /** 5.1.1 / 5.1.4: Trích xuất giá trị chuỗi từ JSON object. */
     private static String extractString(String obj, String key) {
         String search = "\"" + key + "\"";
         int idx = obj.indexOf(search);
@@ -277,7 +293,7 @@ public class LeaderboardService {
         return obj.substring(q1 + 1, q2);
     }
 
-    /** 5.1.1 - 5.1.2: Trích xuất giá trị số nguyên từ JSON object. */
+    /** 5.1.1 / 5.1.4: Trích xuất giá trị số nguyên từ JSON object. */
     private static int extractInt(String obj, String key) {
         String search = "\"" + key + "\"";
         int idx = obj.indexOf(search);
@@ -293,7 +309,7 @@ public class LeaderboardService {
     }
 
     /**
-     * 5.1.1: Serialize danh sách Entry để ghi lại leaderboard.json.
+     * 5.1.3: Serialize danh sách Entry để ghi lại leaderboard.json.
      */
     private static String serializeJsonArray(List<Entry> entries) {
         StringBuilder sb = new StringBuilder("[\n");
@@ -314,7 +330,7 @@ public class LeaderboardService {
         return sb.toString();
     }
 
-    /** 5.1.1: Escape tên người chơi trước khi ghi JSON. */
+    /** 5.1.3: Escape tên người chơi trước khi ghi JSON. */
     private static String escapeName(String name) {
         return name.replace("\\", "\\\\").replace("\"", "\\\"");
     }
