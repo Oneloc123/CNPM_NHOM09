@@ -34,6 +34,8 @@ public class ResultView extends JFrame {
     private final List<Entry> topEntries;
 
     // Màu sắc với phong cách dark theme cho BXH
+    private static final Color COLOR_BG      = new Color(24, 28, 36);
+    private static final Color COLOR_ACCENT  = new Color(255, 200, 60);
     private static final Color COLOR_SUBTEXT  = new Color(160, 170, 180);
     private static final Color COLOR_ROW_ODD  = new Color(32, 37, 48);    // Màu hàng lẻ bảng XH
     private static final Color COLOR_ROW_EVEN = new Color(40, 46, 58);    // Màu hàng chẵn bảng XH
@@ -93,9 +95,11 @@ public class ResultView extends JFrame {
         buttonPanel.setOpaque(false);
 
         btnRestart = createButton("Chơi lại", new Color(0, 180, 95));
+        btnLeaderboard = createButton("🏆 BXH",    new Color(255, 200, 60));
         btnHome = createButton("Trang chủ", new Color(70, 80, 95));
 
         buttonPanel.add(btnRestart);
+        buttonPanel.add(btnLeaderboard);
         buttonPanel.add(btnHome);
 
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -197,6 +201,14 @@ public class ResultView extends JFrame {
         return wrapper;
     }
 
+    private Color resolveResultColor(String resultMessage) {
+        if (resultMessage.contains("thắng")) {
+            return resultMessage.contains("Máy")
+                    ? new Color(225, 55, 75)
+                    : new Color(0, 195, 255);
+        }
+        return Color.WHITE;
+    }
     
     /**
      * 5.1.3: Tạo bộ ba nút Chơi lại, BXH và Trang chủ.
