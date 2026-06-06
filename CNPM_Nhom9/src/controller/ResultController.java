@@ -17,7 +17,7 @@ public class ResultController {
 
     
     /**
-     * 5.1.0 - 5.1.3: Khởi tạo luồng kết quả và tích hợp BXH cục bộ.
+     * 5.1.0 - 5.1.4: Khởi tạo luồng kết quả và tích hợp BXH cục bộ.
      *
      * @param resultMessage  Chuỗi kết quả: "<tên> thắng!" / "Máy thắng!" / "Hòa!"
      * @param moveCount      Tổng số nước đi trong ván đấu
@@ -35,26 +35,35 @@ public class ResultController {
         this.size = size;
         this.boardView = boardView;
 
-        // 5.1.0: Chuyển size thành định dạng lưu BXH, ví dụ "3x3" hoặc "5x5".
+        // 5.1.0: Ván đấu vừa kết thúc — chuyển size thành định dạng lưu BXH, ví dụ "3x3" hoặc "5x5".
         String boardSizeStr = size + "x" + size;
 
         // 5.1.1: Ghi nhận và cộng dồn thành tích theo tên, độ khó, cỡ bàn.
         LeaderboardService.record(playerName, difficulty, boardSizeStr, resultMessage);
 
-        // 5.1.2: Lấy Top 5 sau khi cập nhật để truyền sang ResultView.
+        // 5.1.2: Xác định loại kết quả để cộng dồn đúng chỉ số
+        //        (logic nằm bên trong LeaderboardService.record():
+        //         máy thắng → losses++; hòa → draws++; người chơi thắng → wins++).
+ 
+        // 5.1.3: Lưu lại toàn bộ dữ liệu BXH sau khi đã cập nhật
+        //        (thực hiện ngay cuối LeaderboardService.record() qua saveAll()).
+ 
+        // 5.1.4: Truy vấn danh sách Top 5 sau khi cập nhật, sắp xếp theo wins rồi totalGames.        
         var topEntries = LeaderboardService.getTopEntries();
 
-        // 5.1.3: Tạo màn hình kết quả; BXH chỉ hiện khi người chơi bấm nút.
+        // 5.1.5: Tạo màn hình kết quả với đầy đủ thông tin ván đấu và 3 nút điều hướng;
+        //        BXH chỉ hiện khi người chơi bấm nút BXH.
         this.view = new ResultView(resultMessage, moveCount, topEntries);
         this.view.setController(this);
     }
 
     public void showResult() {
+        // 5.1.5: Hiển thị màn hình kết quả.
         this.view.setVisible(true);
     }
 
     public void handleRestart() {
-        // Giải phóng cả 2 màn hình cũ
+        // AF-02 / 5.3.3: Người chơi chọn Chơi lại — đóng cả 2 màn hình cũ rồi khởi tạo ván mới.
         view.dispose();
         boardView.dispose();
 
@@ -68,9 +77,9 @@ public class ResultController {
     }
 
     public void handleGoHome() {
+        // AF-02 / 5.3.4: Người chơi chọn Trang chủ — đóng màn hình kết quả và bàn cờ, quay về menu chính.
         view.dispose();
         boardView.dispose();
-        // Quay về menu chính
         new GameController();
     }
 }
