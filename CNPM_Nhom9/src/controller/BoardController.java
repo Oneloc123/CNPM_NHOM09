@@ -5,6 +5,8 @@ import javax.swing.SwingWorker;
 
 import aiService.AIService;
 import model.Board;
+import model.MoveRecord;
+import model.MoveScorer;
 import view.BoardView;
 
 public class BoardController {
@@ -20,6 +22,15 @@ public class BoardController {
     
     // Thuộc tính lưu kích thước giao diện để dùng khi nhấn nút Chơi lại
     private final int size;
+
+    // ── Tích lũy điểm ────────────────────────────────────────────────
+    private int totalScoreX = 0;
+    private int totalScoreO = 0;
+
+    // Cờ để tránh AI gọi nhiều lần khi người chơi click nhanh
+    private volatile boolean isAIPlaying = false;
+    // Cờ đánh dấu game đã kết thúc (có người thắng hoặc hòa)
+    private volatile boolean isGameEnded = false;
 
     /*
     UC1.1.6.3: Hệ thống khởi tạo Controller cho bàn cờ
@@ -62,7 +73,6 @@ public class BoardController {
     // Controller nhận tọa độ ô cờ từ View.
     // Chuyển thông tin cho lớp Board kiểm tra tính hợp lệ của nước đi.
     public void handlePlayerMove(int row, int col) {
-
         // UC 2.1.4 Hệ thống kiểm tra tính hợp lệ của nước đi
         // Mô tả:
         // Kiểm tra:
@@ -70,7 +80,6 @@ public class BoardController {
         // Ô cờ đã được đánh dấu trước đó hay chưa.
         int player = board.makeMove(row, col);
 //        Kết quả trả về
-//
 //        Giá trị	Ý nghĩa
 //        0	        Nước đi không hợp lệ
 //        1	        Người chơi X
@@ -80,14 +89,13 @@ public class BoardController {
         // giá trị trả về từ phương thức của bước 2.1.4 là 0
         // 0 là giá trị thể hiện nước đi không hợp lệ
         if (player == 0) {
-            // UC 2.2.2. Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
-            // controller gọi phương thức showError của lớp View để hiển thị giao diện hộp thông báo
             SwingUtilities.invokeLater(() -> {
-                // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
+                // UC 2.2.2 Hệ thống làm nổi bật ô không hợp lệ
                 // gọi phương thức highlightInvalidCell() của lớp View
                 // để thực hiện hiệu ứng nhấp nháy màu đỏ trên ô cờ lỗi
                 view.highlightInvalidCell(row, col);
-
+                // UC 2.2.3. Hệ thống hiển thị thông báo "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
+                // controller gọi phương thức showError của lớp View để hiển thị giao diện hộp thông báo
                 view.showError(
                         "Nước đi không hợp lệ, vui lòng chọn nước đi khác"
                 );
@@ -95,39 +103,30 @@ public class BoardController {
             });
             return;
         }
-        // UC2.1.6: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
+        // ──UC2.1.6: Hệ thống Tính điểm và ghi lịch sử ─────────────────────────────
+        recordMove(row, col, player);
+
+        // UC2.1.8: Hệ thống cật nhật giao diện bàn cờ  theo ma trận bàn cờ 2 chiều
         // vẽ lại bàn cờ dựa trên dối tượng matrix 2 chiều của lớp board
         view.updateBoard(board);
-        // UC2.1.7 : hệ thống chuyển sang UC-004 để kiểm tra kết thúc ván đấu
-//        Mô tả:
-//
-//        Sau khi ghi nhận nước đi, hệ thống kiểm tra:
-//
-//        n quân liên tiếp theo hàng ngang.
-//        n quân liên tiếp theo hàng dọc.
-//        n quân liên tiếp theo đường chéo chính.
-//        n quân liên tiếp theo đường chéo phụ.
-//      ghi chú : n là số lượng quân để chiến thắng
+        // UC2.1.9 : hệ thống chuyển sang UC-004 để kiểm tra kết thúc ván đấu
 
         int[][] winLine = board.getWinLine(row, col, player);
         if (winLine != null) {
             // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
             view.highlightWin(winLine, true);
-            
             // Người chơi click chuột thắng -> Thông báo Người chơi thắng
             // SwingUtilities.invokeLater(() -> view.showEndGame(playerName + " thắng!"));
             notifyGameEnd(row, col, player, true);
             return;
         }
-        //UC 2.1.8 Hệ thống kiểm tra hòa
-        //Nếu toàn bộ bàn cờ đã được đánh dấu và không có người thắng:
         if (board.isBoardFull()) {
             // UC 2.3.1 : hệ thống phát hiện ván đấu đủ điều kiện kết thúc và tiếp tục UC-004
             // SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
             notifyGameEnd(row, col, player, true);
             return;
         }
-        // UC 2.1.9 : Hệ thống chuyển san lượt cho đối thủ Nếu chưa thắng và chưa hòa
+        // UC 2.1.10 : Hệ thống chuyển san lượt cho đối thủ Nếu chưa thắng và chưa hòa
 //            Mô tả:
 //                Khóa thao tác người chơi.
 //                Hiển thị trạng thái AI đang suy nghĩ.
@@ -137,43 +136,165 @@ public class BoardController {
         triggerAIMove();
     }
 
-    private void triggerAIMove() {
-        new SwingWorker<int[], Void>() {
+    /**
+     * Tính điểm nước đi vừa thực hiện, cập nhật tổng điểm,
+     * tạo MoveRecord và gửi lên View để hiển thị.
+     */
+    private void recordMove(int row, int col, int player) {
+        // UC 2.1.6.a lấy ma trận bàn cờ
+        // Lấy snapshot ma trận sau khi đã makeMove
+        int[][] snapshot = board.getMatrixCopy();
+        // UC 2.1.6.b lấy điều kiện chiến thắng
+        int winCondition = board.getWinCondition();
+        // UC 2.1.6.c tính điểm và nhận xét nước đi vừa thực hiện
+        MoveScorer.ScoreResult result = MoveScorer.calculate(snapshot, row, col, player, winCondition);
+        // UC 2.1.6.d cật nhật điểm cho X hoặc O tuỳ theo lượt chơi hiện tại
+        if (player == 1) totalScoreX += result.score;
+        else             totalScoreO += result.score;
+        // UC 2.1.7 cật nhật hiển thị điểm số và lịch sử nước đi
+        // Uc 2.1.7.a lưu thông tin một nước đi
+        MoveRecord rec = new MoveRecord(board.getMoveCount(), player, row, col,
+                result.score, totalScoreX, totalScoreO, result.description
+        );
+        // UC 2.1.7.b cật nhật hiển thị điểm số và lịch sử nước đi
+        SwingUtilities.invokeLater(() -> view.addMoveRecord(rec));
+    }
 
+    /**
+     * UC-003.1.0: Hệ thống tự động kích hoạt lượt AI sau khi người chơi hoàn thành nước đi hợp lệ.
+     * Kiểm tra:
+     * - AI có đang chạy hay không.
+     * - Game đã kết thúc hay chưa.
+     * Nếu hợp lệ:
+     * - Đánh dấu AI đang xử lý.
+     * - Tạo SwingWorker chạy nền.
+     */
+    private void triggerAIMove() {
+        // Tránh gọi AI nhiều lần cùng lúc
+        if (isAIPlaying || isGameEnded) {
+            return;
+        }
+        // Đánh dấu AI đang xử lý
+        isAIPlaying = true;
+        
+        new SwingWorker<int[], Void>() {
+        	
+        	/**
+        	 * UC-003.1.1: AI suy nghĩ ở luồng nền.
+        	 * Hệ thống:
+        	 * - Giữ giao diện không bị treo.
+        	 * - Hiển thị trạng thái: "Máy đang suy nghĩ..."
+        	 * UC-003.1.2: Xác định độ khó:
+        	 * - Dễ  -> AF-01
+        	 * - Khó -> AF-02
+        	 * @return nước đi AI chọn.
+        	 */
             @Override
             protected int[] doInBackground() {
+                // Thêm độ trễ nhỏ để tạo cảm giác tự nhiên (50-200ms)
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                // Tìm nước đi tốt nhất
                 return ai.getNextMove(board);
             }
-
-            @Override
-            protected void done() {
-                try {
-                    int[] move = get();
-                    if (move == null) return;
-
+            
+            /**
+             * UC-003.1.3 đến UC-003.1.7
+             **/
+             @Override
+             protected void done() {
+                 try {
+                 	// Nếu game đã kết thúc trong lúc AI đang suy nghĩ thì bỏ qua
+                     if (isGameEnded) {
+                         isAIPlaying = false;
+                         return;
+                     }
+                     
+                     // Lấy nước đi AI tìm được
+                     int[] move = get();
+                     if (move == null) { 
+                     	// Không còn nước đi -> kiểm tra hòa
+                         if (board.isBoardFull() && !isGameEnded) {
+                             isGameEnded = true;
+                             notifyGameEnd(-1, -1, 0, false);
+                         }
+                         isAIPlaying = false;
+                         return;
+                     }
+                  
+                    /**
+                     * UC-003.1.3: Hệ thống đặt quân AI vào vị trí đã được tính toán.
+                     * - Cập nhật Model.
+                     * - Cập nhật giao diện.
+                     */
+                    // Đánh nước đi của AI TRƯỚC để có player và snapshot đúng
                     int player = board.makeMove(move[0], move[1]);
-                    view.updateBoard(board);
-                    view.setInputEnabled(true);
 
+                    // ── Tính điểm và ghi lịch sử (AI) ──────────────
+                    recordMove(move[0], move[1], player);
+                    // Cập nhật giao diện
+                    view.updateBoard(board);
+
+                    /**
+                     * UC-003.1.5: Kiểm tra điều kiện thắng.
+                     * Nếu AI tạo được: - 3 quân liên tiếp (3x3) hoặc - 4 quân liên tiếp (5x5) => Chuyển sang UC-004.
+                     */
+                	// Kiểm tra AI thắng chưa
                     int[][] winLine = board.getWinLine(move[0], move[1], player);
                     if (winLine != null) {
-                        view.highlightWin(winLine, false);
+                    	isGameEnded = true;
+                    	// Tô sáng đường thắng
+//                        view.highlightWin(winLine, false);
                         
                         // Luồng tính toán của Máy thắng -> Thông báo Máy thắng
-                        // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
+                     // SwingUtilities.invokeLater(() -> view.showEndGame("Máy thắng!"));
                         notifyGameEnd(move[0], move[1], player, false);
+                        isAIPlaying = false;
                         return;
                     }
 
+                    /**
+                     * UC-003.1.6: Kiểm tra điều kiện hòa.
+                     * Nếu:
+                     * - Bàn cờ đầy.
+                     * - Không có người thắng.
+                     * => Chuyển sang UC-004.
+                     */
+                    // Kiểm tra hòa	
                     if (board.isBoardFull()) {
-                        // SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
+                    	isGameEnded = true;
+                    	// SwingUtilities.invokeLater(() -> view.showEndGame("Hòa!"));
                         notifyGameEnd(move[0], move[1], player, false);
+                        isAIPlaying = false;
                         return;
                     }
+                    
+                    /**
+                     * UC-003.1.4: Mở khóa input người chơi.
+                     * Chỉ cho phép đánh
+                     * vào các ô còn trống.
+                     *
+                     * UC-003.1.7: Chuyển lượt về người chơi.
+                     * Hiển thị: "Lượt của: [Tên người chơi]"
+                     * Tiếp tục UC-002.
+                     */
+                    if (!isGameEnded) {
+                    	// Mở khóa bàn cờ cho người chơi
+                        view.setInputEnabled(true);
+                    }
+                    // ==========================================
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    view.setInputEnabled(true);
+                    // Nếu có lỗi, vẫn mở khóa bàn cờ để người chơi có thể tiếp tục
+                    if (!isGameEnded) {
+                        view.setInputEnabled(true);
+                    }
+                } finally {
+                    isAIPlaying = false;
                 }
             }
         }.execute();
@@ -200,14 +321,14 @@ public class BoardController {
 
     private void notifyGameEnd(int row, int col, int player, boolean isPlayerMove) {
         int[][] winLine = board.getWinLine(row, col, player);
-        
+
         // Luồng chính: Có bên chiến thắng
         if (winLine != null) {
             view.lockBoard();
             view.highlightWinLine(winLine, isPlayerMove);
-            
+
             String resultMessage = isPlayerMove ? (playerName + " thắng!") : "Máy thắng!";
-            
+
             // Khởi chạy màn hình Result độc lập
             SwingUtilities.invokeLater(() -> {
                 ResultController resultCtrl = new ResultController(
@@ -217,11 +338,11 @@ public class BoardController {
             });
             return;
         }
-    
+
         // Luồng thay thế AF-01: Kết quả Hòa cờ
         if (board.isBoardFull()) {
             view.lockBoard();
-            
+
             SwingUtilities.invokeLater(() -> {
                 ResultController resultCtrl = new ResultController(
                     "Hòa!", board.getMoveCount(), ai.getDifficulty(), playerName, isPlayerFirst, size, view
@@ -230,7 +351,7 @@ public class BoardController {
             });
             return;
         }
-    
+
         // Luồng thay thế AF-02: Ván đấu tiếp tục
         if (isPlayerMove) {
             view.setInputEnabled(false);

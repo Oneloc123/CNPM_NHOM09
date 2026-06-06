@@ -1,0 +1,285 @@
+// test/AIServiceTest.java
+package test;
+
+import aiService.AIService;
+import model.Board;
+
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+@DisplayName("UC-003 AIService")
+class AIServiceTest {
+
+    // =========================================================
+    // DÙNG CHO BƯỚC 3.2.6
+    // =========================================================
+    static String simulateFullGame(int boardSize, int firstRow, int firstCol, boolean useStrategicPlayer) {
+        Board board = new Board(boardSize);
+        AIService ai = new AIService("Khó", true);
+        board.makeMove(firstRow, firstCol);
+        if (board.getWinLine(firstRow, firstCol, 1) != null) return "PLAYER_WIN";
+        int maxMoves = boardSize * boardSize - 1;
+        for (int i = 0; i < maxMoves; i++) {
+            if (board.isBoardFull()) break;
+            int[] aiMove = ai.getNextMove(board);
+            if (aiMove == null) break;
+            board.makeMove(aiMove[0], aiMove[1]);
+            if (board.getWinLine(aiMove[0], aiMove[1], 2) != null) return "AI_WIN";
+            if (board.isBoardFull()) break;
+            int[] playerMove = useStrategicPlayer ? findSmartAdjacentCell(board, boardSize, aiMove) : findFirstEmptyCell(board, boardSize);
+            if (playerMove == null) break;
+            board.makeMove(playerMove[0], playerMove[1]);
+            if (board.getWinLine(playerMove[0], playerMove[1], 1) != null) return "PLAYER_WIN";
+        }
+        return "DRAW";
+    }
+
+    static int[] findFirstEmptyCell(Board board, int size) {
+        for (int r = 0; r < size; r++)
+            for (int c = 0; c < size; c++)
+                if (board.getCell(r, c) == 0) return new int[]{r, c};
+        return null;
+    }
+
+    static int[] findSmartAdjacentCell(Board board, int size, int[] lastEnemyMove) {
+        int[][] neighbors = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
+        for (int[] d : neighbors) {
+            int nr = lastEnemyMove[0] + d[0];
+            int nc = lastEnemyMove[1] + d[1];
+            if (nr >= 0 && nr < size && nc >= 0 && nc < size && board.getCell(nr, nc) == 0)
+                return new int[]{nr, nc};
+        }
+        return findFirstEmptyCell(board, size);
+    }
+
+    // =========================================================
+    // 1. MAIN FLOW – KIỂM THỬ LUỒNG CHÍNH (ĐỘ KHÓ DỄ)
+    // =========================================================
+
+    @Nested
+    @DisplayName("Luồng chính – Xử lý chiến lược Smart Random")
+    class MainFlowEasyMode {
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.1.2 (Nhánh Dễ -> Kiểm tra trạng thái bàn cờ đầy, trả về null)
+         */
+        @Test
+        @DisplayName("UT-3.1.2.1 – Trả về null khi ma trận bàn cờ đã đầy quân")
+        void returnsNullWhenBoardFull() {
+            Board board = new Board(3);
+            int[][] seq = {{0,0},{0,1},{0,2},{1,0},{1,1},{1,2},{2,0},{2,1},{2,2}};
+            for (int[] m : seq) board.makeMove(m[0], m[1]);
+
+            int[] move = new AIService("Dễ", true).getNextMove(board);
+            assertNull(move, "Bước 3.1.2 yêu cầu trả về null khi kiểm tra bàn cờ đầy");
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.1.2 (Nhánh Dễ -> Quét ma trận thu thập tất cả các ô còn trống)
+         */
+        @Test
+        @DisplayName("UT-3.1.2.2 – Chỉ chọn nước đi nằm trong các ô còn trống")
+        void onlyPicksEmptyCells() {
+            for (int i = 0; i < 20; i++) {
+                Board board = new Board(3);
+                board.makeMove(0, 0); 
+                board.makeMove(2, 2); 
+                int[] move = new AIService("Dễ", true).getNextMove(board);
+
+                assertNotNull(move);
+                assertEquals(0, board.getCell(move[0], move[1]), "Bước 3.1.2 yêu cầu quét ma trận và lấy ô trống");
+            }
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.1.2 (Nhánh Dễ -> Gán trọng số ưu tiên ô tâm bàn 3x3 = 100)
+         */
+        @Test
+        @DisplayName("UT-3.1.2.3 – Ưu tiên cao cho ô tâm (1,1) của bàn cờ kích thước 3x3")
+        void prefersCenter3x3() {
+            int centerCount = 0;
+            for (int i = 0; i < 50; i++) {
+                Board board = new Board(3);
+                int[] move = new AIService("Dễ", false).getNextMove(board);
+                if (move != null && move[0] == 1 && move[1] == 1) centerCount++;
+            }
+            assertTrue(centerCount >= 20, "Bước 3.1.2 gán trọng số ô tâm 3x3 là 100 nên tỷ lệ trúng phải cao");
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.1.2 (Nhánh Dễ -> Gán trọng số ưu tiên ô tâm tuyệt đối 5x5 = 100)
+         */
+        @Test
+        @DisplayName("UT-3.1.2.4 – Ưu tiên cao cho ô tâm tuyệt đối (2,2) của bàn cờ kích thước 5x5")
+        void prefersCenter5x5() {
+            int centerCount = 0;
+            for (int i = 0; i < 50; i++) {
+                Board board = new Board(5);
+                int[] move = new AIService("Dễ", false).getNextMove(board);
+                if (move != null && move[0] == 2 && move[1] == 2) centerCount++;
+            }
+            assertTrue(centerCount >= 15, "Bước 3.1.2 gán trọng số ô tâm tuyệt đối 5x5 là 100");
+        }
+    }
+
+    // =========================================================
+    // 2. ALTERNATIVE FLOWS – KIỂM THỬ LUỒNG THAY THẾ AF-01 (KHÓ)
+    // =========================================================
+
+    @Nested
+    @DisplayName("Luồng thay thế AF-01 – Chế độ Khó")
+    class AlternativeFlowHardMode {
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.1 (Kiểm tra trạng thái bàn cờ, nếu đầy trả về null)
+         */
+        @Test
+        @DisplayName("UT-3.2.1 – Trả về null khi kiểm tra trạng thái ma trận đầy ở chế độ Khó")
+        void hardModeReturnsNullWhenBoardFull() {
+            Board board = new Board(3);
+            int[][] seq = {{0,0},{0,1},{0,2},{1,0},{1,1},{1,2},{2,0},{2,1},{2,2}};
+            for (int[] m : seq) board.makeMove(m[0], m[1]);
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNull(move, "Bước 3.2.1 yêu cầu trả về null để quay về luồng chính xử lý hòa");
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (Áp dụng hệ số 1.2 phòng thủ, quét 4 hướng chặn hàng ngang bàn 3x3)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.1 – Phòng thủ chủ động chặn đứng hàng ngang trên bàn 3x3")
+        void blocksHorizontalThreat3x3() {
+            Board board = new Board(3);
+            board.makeMove(0, 0); // Người chơi X
+            board.makeMove(2, 2); // AI O
+            board.makeMove(0, 1); // Người chơi X (Cần chặn nguy cơ thắng ở ô 0,2)
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("AI bắt buộc chặn tại (0,2) dựa trên tính toán evaluateBoard ở bước 3.2.4",
+                () -> assertEquals(0, move[0]),
+                () -> assertEquals(2, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (Áp dụng hệ số 1.2 phòng thủ, quét 4 hướng chặn hàng dọc bàn 3x3)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.2 – Phòng thủ chủ động chặn đứng hàng dọc trên bàn 3x3")
+        void blocksVerticalThreat3x3() {
+            Board board = new Board(3);
+            board.makeMove(0, 0); // Người chơi X
+            board.makeMove(1, 1); // AI O
+            board.makeMove(1, 0); // Người chơi X (Cần chặn nguy cơ thắng ở ô 2,0)
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("AI bắt buộc chặn dọc tại (2,0) theo bước 3.2.4",
+                () -> assertEquals(2, move[0]),
+                () -> assertEquals(0, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (Nhánh điểm WIN_SCORE dứt điểm luôn lớn hơn LOSE_SCORE chặn)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.3 – Ưu tiên nước đi tạo chuỗi chiến thắng hơn là nước đi phòng thủ")
+        void winsImmediatelyOverBlocking() {
+            Board board = new Board(3);
+            board.makeMove(0, 0); // X chuẩn bị hàng ngang 0
+            board.makeMove(1, 0); // O
+            board.makeMove(0, 1); // X chuẩn bị hàng ngang 0 (Cần chặn ở 0,2)
+            board.makeMove(1, 1); // O - AI chuẩn bị hàng ngang 1 (Cần đánh ở 1,2 để thắng)
+            board.makeMove(2, 2); 
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("Bước 3.2.4 yêu cầu ưu tiên WIN_SCORE nên AI phải chọn kết liễu tại (1,2)",
+                () -> assertEquals(1, move[0]),
+                () -> assertEquals(2, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (Quét pattern chuỗi 3 quân hàng ngang trên bàn 5x5)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.4 – Chặn đứng chuỗi tích lũy hàng ngang nguy hiểm trên bàn 5x5")
+        void blocksHorizontalChain5x5() {
+            Board board = new Board(5);
+            board.makeMove(0, 0); // X
+            board.makeMove(1, 0); // O
+            board.makeMove(0, 1); // X
+            board.makeMove(1, 1); // O
+            board.makeMove(0, 2); // X tạo chuỗi 3 quân (Cần chặn ở đầu chuỗi trống 0,3)
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("AI phân tích chuỗi 4 hướng bàn 5x5 và ép chặn tại (0,3)",
+                () -> assertEquals(0, move[0]),
+                () -> assertEquals(3, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (Quét pattern đường chéo ngược trên bàn 5x5)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.5 – Chặn đứng chuỗi đường chéo ngược nguy hiểm trên bàn 5x5")
+        void blocksAntiDiagonalChain5x5() {
+            Board board = new Board(5);
+            board.makeMove(0, 3); // X
+            board.makeMove(0, 2); // O
+            board.makeMove(1, 2); // X
+            board.makeMove(1, 1); // O
+            board.makeMove(2, 1); // X tạo chuỗi chéo ngược (0,3), (1,2), (2,1)
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("AI chọn chặn đường chéo phụ tại ô trống (3,0) theo thuật toán bước 3.2.4",
+                () -> assertEquals(3, move[0]),
+                () -> assertEquals(0, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.4 (AI phát hiện chuỗi của bản thân đủ 3 quân để kết liễu thắng trên bàn 5x5)
+         */
+        @Test
+        @DisplayName("UT-3.2.4.6 – Tấn công kết liễu khi bản thân đạt chuỗi lợi thế trên bàn 5x5")
+        void winsImmediately5x5() {
+            Board board = new Board(5);
+            board.makeMove(0, 0); // X
+            board.makeMove(2, 0); // O - AI
+            board.makeMove(0, 1); // X
+            board.makeMove(2, 1); // O - AI
+            board.makeMove(1, 1); // X
+            board.makeMove(2, 2); // O - AI đạt chuỗi lợi thế 3 quân liên tiếp ở hàng 2
+            board.makeMove(4, 4); // X
+
+            int[] move = new AIService("Khó", true).getNextMove(board);
+            assertNotNull(move);
+            assertAll("AI chọn dứt điểm ván đấu tại ô trống tiếp diễn (2,3)",
+                () -> assertEquals(2, move[0]),
+                () -> assertEquals(3, move[1])
+            );
+        }
+
+        /**
+         * Ánh xạ trực tiếp: Bước 3.2.2 (Độ sâu bàn 3x3 = 8) & Bước 3.2.6 (Chọn tọa độ có điểm số Minimax cao nhất)
+         */
+        @ParameterizedTest(name = "Người chơi mở nước đầu tại ({0},{1})")
+        @CsvSource({"0,0", "0,1", "0,2", "1,0", "1,1", "1,2", "2,0", "2,1", "2,2"})
+        @DisplayName("UT-3.2.6 – Nước đi tối ưu nhất giúp AI hoàn toàn bất bại trên bàn 3x3")
+        void neverLoses3x3(int startRow, int startCol) {
+            String result = simulateFullGame(3, startRow, startCol, false);
+            assertNotEquals("PLAYER_WIN", result, "Nước đi tốt nhất chọn từ bước 3.2.6 đảm bảo máy không thể thua");
+        }
+    }
+}

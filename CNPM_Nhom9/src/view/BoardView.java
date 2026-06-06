@@ -2,6 +2,7 @@ package view;
 
 import controller.BoardController;
 import model.Board;
+import model.MoveRecord;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -21,6 +22,9 @@ public class BoardView extends JFrame {
     private String oPlayerName;
     private int size; // Lưu kích thước hiển thị bàn cờ
 
+    // ── Panel lịch sử nước đi
+    private MoveHistoryPanel historyPanel;
+
     /*
     UC1.1.6.2: Hệ thống khởi tạo giao diện bàn cờ tự động co giãn lưới ô
      */
@@ -37,9 +41,9 @@ public class BoardView extends JFrame {
 
         // Thay đổi size cửa sổ Windows cho tương thích diện tích lưới nút bấm
         if (size == 3) {
-            setSize(480, 550);
+            setSize(880, 550);
         } else {
-            setSize(620, 700); 
+            setSize(1020, 700);
         }
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -51,6 +55,10 @@ public class BoardView extends JFrame {
 
         JPanel boardPanel = createBoardPanel();
         add(boardPanel, BorderLayout.CENTER);
+
+        // ── Panel lịch sử (phải) ──────────────────────────────────
+        historyPanel = new MoveHistoryPanel(xPlayerName, oPlayerName);
+        add(historyPanel, BorderLayout.EAST);
     }
 
     public void setController(BoardController controller) {
@@ -71,14 +79,11 @@ public class BoardView extends JFrame {
         panel.setBackground(new Color(45, 45, 45));
 
         buttons = new JButton[size][size];
-
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 JButton btn = createGameButton();
                 final int row = i, col = j;
-
                 btn.addActionListener(e -> onCellClicked(row, col));
-
                 buttons[i][j] = btn;
                 panel.add(btn);
             }
@@ -101,9 +106,7 @@ public class BoardView extends JFrame {
 //    Người chơi nhấn chuột vào một ô trên bàn cờ.
 //
 //    UC 2.1.2 Hệ thống nhận sự kiện từ giao diện
-//
 //    Mô tả:
-//
 //    Nhận tọa độ hàng (row) và cột (col) của ô được chọn.
 //    Kiểm tra ván đấu đã kết thúc hay chưa.
 //    Nếu chưa kết thúc, chuyển yêu cầu sang Controller xử lý.
@@ -209,53 +212,79 @@ public class BoardView extends JFrame {
         //Sau đó quay lại bước UC 2.1.1.
     }
 
-    // UC 2.2.2a Hệ thống làm nổi bật ô không hợp lệ
-// nhận vào tọa độ hàng và cột của ô cờ mà người chơi vừa chọn
-// hệ thống thực hiện hiệu ứng nhấp nháy màu đỏ để giúp người chơi
-// dễ dàng nhận biết ô cờ không hợp lệ đã được chọn trước đó
+    // HÀM highlightInvalidCell mới
+    // Nâng cấp highlightInvalidCell()— dùng TimerSwing sẵn, tránh memory leak
+    // UC 2.2.2a — nhấp nháy màu đỏ 3 lần rồi khôi phục
+    /**
+     * Làm nổi bật ô không hợp lệ bằng hiệu ứng nhấp nháy màu đỏ.
+     * Được gọi khi người chơi chọn một ô đã được đánh dấu trước đó.
+     *
+     * @param row hàng của ô không hợp lệ
+     * @param col cột của ô không hợp lệ
+     */
     public void highlightInvalidCell(int row, int col) {
-
-        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+        // Lấy nút tương ứng với vị trí ô cờ cần làm nổi bật
         JButton btn = buttons[row][col];
-
-        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
-        Color normal = btn.getBackground();
-
-        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
-        // mỗi lần kích hoạt cách nhau 150 mili giây
+        // Lưu lại màu nền ban đầu để khôi phục sau khi hiệu ứng kết thúc
+        Color originalBg = btn.getBackground();
+        // Biến đếm số lần đổi màu.
+        // Sử dụng mảng để có thể truy cập và thay đổi bên trong lambda expression.
+        int[] count = {0};
+        // Tạo bộ đếm thời gian với chu kỳ 150ms
         Timer timer = new Timer(150, null);
-
-        timer.addActionListener(new ActionListener() {
-
-            // biến đếm số lần thay đổi màu
-            int count = 0;
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
-                if (count % 2 == 0) {
-                    btn.setBackground(Color.RED);
-                }
-                // các lần lẻ khôi phục màu nền ban đầu
-                else {
-                    btn.setBackground(normal);
-                }
-
-                count++;
-
-                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
-                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
-                if (count >= 6) {
-                    btn.setBackground(normal);
-                    timer.stop();
-                }
+        // Thêm sự kiện thực hiện mỗi khi Timer kích hoạt
+        timer.addActionListener(e -> {
+            // Chuyển đổi qua lại giữa màu đỏ và màu nền ban đầu
+            // nhằm tạo hiệu ứng nhấp nháy cảnh báo
+            btn.setBackground(count[0] % 2 == 0 ? Color.RED : originalBg);
+            // Sau 6 lần đổi màu thì dừng hiệu ứng
+            if (++count[0] >= 6) {
+                // Khôi phục màu nền ban đầu của ô cờ
+                btn.setBackground(originalBg);
+                // Dừng Timer để tránh tiếp tục thực hiện hiệu ứng
+                ((Timer) e.getSource()).stop();
             }
         });
-
-        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+        // Cho phép Timer lặp lại nhiều lần
+        timer.setRepeats(true);
+        // Bắt đầu hiệu ứng nhấp nháy
         timer.start();
     }
+
+    // HÀM highlightInvalidCell cũ
+//    public void highlightInvalidCell(int row, int col) {
+//        // lấy đối tượng JButton tương ứng với vị trí ô cờ được chọn
+//        JButton btn = buttons[row][col];
+//        // lưu lại màu nền mặc định của ô cờ để khôi phục sau hiệu ứng
+//        Color normal = btn.getBackground();
+//        // tạo bộ đếm thời gian thực hiện hiệu ứng nhấp nháy
+//        // mỗi lần kích hoạt cách nhau 150 mili giây
+//        Timer timer = new Timer(150, null);
+//        timer.addActionListener(new ActionListener() {
+//            // biến đếm số lần thay đổi màu
+//            int count = 0;
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                // các lần chẵn đổi sang màu đỏ để cảnh báo lỗi
+//                if (count % 2 == 0) {
+//                    btn.setBackground(Color.RED);
+//                }
+//                // các lần lẻ khôi phục màu nền ban đầu
+//                else {
+//                    btn.setBackground(normal);
+//                }
+//                count++;
+//                // sau 6 lần thay đổi màu (3 lần nhấp nháy)
+//                // hệ thống khôi phục màu gốc và dừng bộ đếm thời gian
+//                if (count >= 6) {
+//                    btn.setBackground(normal);
+//                    timer.stop();
+//                }
+//            }
+//        });
+//        // bắt đầu hiệu ứng làm nổi bật ô không hợp lệ
+//        timer.start();
+//    }
 
     public void lockBoard() {
         this.gameOver = true;
@@ -282,5 +311,12 @@ public class BoardView extends JFrame {
             btn.setContentAreaFilled(true);
             btn.setBorder(BorderFactory.createLineBorder(new Color(255, 215, 0), 4));
         }
+    }
+
+    /**
+     * Gọi từ Controller để thêm nước đi mới vào panel lịch sử.
+     */
+    public void addMoveRecord(MoveRecord rec) {
+        historyPanel.addMove(rec);
     }
 }

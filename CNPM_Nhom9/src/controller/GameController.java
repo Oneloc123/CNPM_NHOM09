@@ -21,6 +21,7 @@ public class GameController {
 		String playername = "Anh Hung don doc";
 		// lấy lượt đi
 		boolean isPlayerFirst = true;
+
 		// lấy kích thước bàn cờ
 		int size = 5;
 
@@ -51,37 +52,26 @@ public class GameController {
 		// Kết thúc toàn bộ chương trình
 		System.exit(0);
 	}
-
-
 	/*
 		UC1.1.1: Người chơi ấn vào file exe
 	 */
 	public GameController() {
-
 		// Khởi tạo giao diện màn hình chính của game
 		gameView = new GameView(this);
-
 		try {
-
 			// Thiết lập giao diện theo theme của hệ điều hành
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
 		} catch (Exception e) {
-
 			// In lỗi nếu không thiết lập được giao diện
 			e.printStackTrace();
 		}
-
 		// Hiển thị giao diện trên luồng Swin
 		SwingUtilities.invokeLater(new Runnable() {
-
 			@Override
 			public void run() {
-
 				// Hiển thị cửa sổ game
 				gameView.setVisible(true);
 			}
 		});
 	}
-
 }
